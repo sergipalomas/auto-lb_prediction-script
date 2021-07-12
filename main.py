@@ -7,7 +7,7 @@ import os.path
 # Number of cores to add to a component at each iteration
 proc_step = 48
 # Possible resource configurations for NEMO using elPin
-elpin_cores = [48, 92, 144, 192, 229, 285, 331, 380, 411, 476, 521, 563, 605, 665, 694, 759, 806, 826, 905, 905, 1008,
+elpin_cores = [49, 92, 144, 192, 229, 285, 331, 380, 411, 476, 521, 563, 605, 665, 694, 759, 806, 826, 905, 905, 1008,
                1012, 1061, 1129, 1164, 1240, 1275, 1427, 1476, 1632, 1650, 1741, 1870]
 
 

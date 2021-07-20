@@ -1,51 +1,61 @@
 import pandas as pd
-import os
-import os.path
+import matplotlib.pyplot as plt
+import numpy as np
 
 
-# Some parameters
-# Number of cores to add to a component at each iteration
-proc_step = 48
-# Possible resource configurations for NEMO using elPin
-elpin_cores = [49, 92, 144, 192, 229, 285, 331, 380, 411, 476, 521, 563, 605, 665, 694, 759, 806, 826, 905, 905, 1008,
-               1012, 1061, 1129, 1164, 1240, 1275, 1427, 1476, 1632, 1650, 1741, 1870]
+def sypd2chpsy(nproc, sypd):
+    return nproc * 24 / sypd
+
+def minmax_rescale(serie):
+    return (serie - serie.min()) / (serie.max() - serie.min())
+
+class Component:
+    def __init__(self, name, nproc, sypd):
+        self.name = name
+        self.nproc = nproc
+        self.sypd = sypd
+        self.chpsy = sypd2chpsy(nproc, sypd)
+        self.sypd_n = minmax_rescale(sypd)
+        self.chpsy_n = 1 - minmax_rescale(self.chpsy)
+        self.fitness = (TTS_r * self.sypd_n + ETS_r * self.chpsy_n)
+    def plot_sypd(self):
+        plt.plot(self.nproc, self.sypd, self.nproc, self.chpsy)
+    def plot_chpsy(self):
+        plt.plot(self.nproc, self.chpsy)
+    def plot_fitness(self):
+        plt.plot(self.nproc, self.fitness)
 
 
+TTS_r = 0.8
+ETS_r = 1 - TTS_r
 
-# Read data from LUCIA
-file = "../data/48IFS_48NEMO_no-output_t1/table.csv"
-results_df = pd.read_csv(file)
-results_df.rename(columns={results_df.columns[0]: 'component'}, inplace=True)
-results_df["waiting_cost"] = results_df.waiting_time * results_df.nproc
+comp1 = pd.read_csv("./data/IFS_SR_scalability_ece3.csv")
+comp2 = pd.read_csv("./data/NEMO_SR_scalability_ece3.csv")
 
-# Split components and coupled data
-components_df = results_df[:-1]
-coupled_df = results_df[-1:]
-print(components_df, "\n", coupled_df)
-# Get component names
-components = components_df.component.values
+comp1['CHPSY'] = sypd2chpsy(comp1.nproc, comp1.SYPD)
+comp2['CHPSY'] = sypd2chpsy(comp2.nproc, comp2.SYPD)
 
-# Get bottleneck component
-max_waiting_cost_component = components_df.loc[components_df.waiting_cost.idxmax(), "component"]
-print("Bottleneck component is %s. We increase the number of resources for this component." % max_waiting_cost_component)
+c1 = Component('IFS', comp1.nproc, comp1.SYPD)
+c2 = Component('NEMO', comp2.nproc, comp2.SYPD)
 
-# Save current experiment config.
-file_hist = "./auto_model_history.txt"
-history = components_df[['component', 'nproc', 'SYPD', 'CHPSY']]
+c1.plot_sypd()
+c2.plot_sypd()
+plt.title("Scalability")
+plt.legend([c1.name, c2.name])
+plt.show()
 
-# If this is the first iteration, save the performance results for each component and use them as base case to compute
-# metrics like speedup and efficiency.
-file_base_case = "./base_case.txt"
-if not os.path.isfile(file_base_case):
-    with open(file_base_case, 'a') as f:
-        for i in range(components.size):
-            component = components[i]
-            f.write(component + " SYPD " + components_df.loc[i, "SYPD"])
-            f.write(component + " CHPSY " + components_df.loc[i, "CHPSY"])
+c1.plot_chpsy()
+c2.plot_chpsy()
+plt.title("Scalability Cost")
+plt.legend([c1.name, c2.name])
+#plt.show()
 
-with open(file_hist, 'a') as f:
-    history.to_csv(f, index=False)
+c1.plot_fitness()
+c2.plot_fitness()
+plt.title("Fitness")
+plt.legend([c1.name, c2.name])
+#plt.show()
 
+x = np.arange(48, 1008, 48)
 
-print("bye!")
-
+df = pd.DataFrame()

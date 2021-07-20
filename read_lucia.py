@@ -4,8 +4,12 @@ import pandas as pd
 # Number of cores to add to a component at each iteration
 proc_step = 48
 # Possible resource configurations for NEMO using elPin
-elpin_cores = [49, 92, 144, 192, 229, 285, 331, 380, 411, 476, 521, 563, 605, 665, 694, 759, 806, 826, 905, 905, 1008,
+elpin_cores_sr = [48, 92, 144, 192, 229, 285, 331, 380, 411, 476, 521, 563, 605, 665, 694, 759, 806, 826, 905, 905, 1008,
                1012, 1061, 1129, 1164, 1240, 1275, 1427, 1476, 1632, 1650, 1741, 1870]
+
+elpin_cores_hr = [47, 93, 141, 187, 240, 288, 333, 377, 421, 480, 527, 572, 624, 671, 711, 764, 803, 857, 903, 952, 996,
+                  1052, 1089, 1145, 1195, 1248, 1294, 1343, 1391, 1401, 1484, 1525, 1569, 1606, 1676, 1715, 1759, 1794,
+                  1839]
 
 # Read data from LUCIA
 file = "../data/48IFS_48NEMO_no-output_t1/table.csv"

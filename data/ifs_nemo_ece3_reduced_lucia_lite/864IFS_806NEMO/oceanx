@@ -1,0 +1,41 @@
+Results for oceanx:
+
+
+Fields that the component uses during the coupling:
+
+Origin,Operation,Field,Fields,Destination
+oceanx,RC,1,O_OTaux1:O_OTauy1:O_ITaux1:O_ITauy1,ATMIFS
+oceanx,RC,2,O_OTaux2:O_OTauy2:O_ITaux2:O_ITauy2,ATMIFS
+oceanx,RC,3,O_QnsMix:O_QsrMix:OTotEvap:OTotRain:OTotSnow,ATMIFS
+oceanx,RC,4,O_QsrIce:O_QnsIce:O_dQnsdT:OIceEvap,ATMIFS
+oceanx,RC,6,O_Runoff,RNFMAP
+oceanx,RC,7,OCalving,RNFMAP
+oceanx,SN,8,O_SSTSST:O_TepIce:O_AlbIce:OIceFrc:OIceTck:OSnwTck,ATMIFS
+
+-------------------------
+
+Total execution time: 565
+
+Time in interpolation or MPI per Field:
+
+Field,MPI_get,Interpolation,MPI_put,Total
+8,0.000,0.544,0.074,0.618
+1,252.040,0.000,0.000,252.040
+2,1.159,0.000,0.000,1.159
+4,4.327,0.000,0.000,4.327
+3,0.048,0.000,0.000,0.048
+6,23.513,0.000,0.000,23.513
+7,15.995,0.000,0.000,15.995
+
+Σ,297,0.544,0.0737,298
+
+-------------------------
+
+Dependencies (s):
+
+Component oceanx has an overhead of 39.508 (7.00%) seconds due to coupling with RNFMAP
+,MPI_get,Interpolation,MPI_put
+RNFMAP,39.508,0.000,0.000
+Component oceanx has an overhead of 258.191 (45.72%) seconds due to coupling with ATMIFS
+,MPI_get,Interpolation,MPI_put
+ATMIFS,257.573,0.544,0.074

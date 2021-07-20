@@ -1,0 +1,58 @@
+RNFMAP
+Number of processes: 1
+Coupled execution time: 533.242
+Component execution time: 3.115 (0.58%)
+Coupling time: 530.126 (99.42%)
+Waiting time: 515.380 (96.65%)
+Interpolating time: 13.349 (2.50%)
+Coupled component cost (coupled time (h) * num_proc): 0.148
+Component cost (component time (h) * num_proc): 0.001
+Coupling cost (coupling time (h) * num_proc): 0.147
+Waiting cost (MPI_get (h) * num_proc): 0.143
+Interpolation cost (h) * num_proc): 0.004
+
+RNFMAP SYPD: 2355.539
+RNFMAP CHPY: 0.010
+
+-------------------------
+
+ATMIFS
+Number of processes: 288
+Coupled execution time: 533.242
+Component execution time: 491.522 (92.18%)
+Coupling time: 41.720 (7.82%)
+Waiting time: 35.310 (6.62%)
+Interpolating time: 6.173 (1.16%)
+Coupled component cost (coupled time (h) * num_proc): 42.659
+Component cost (component time (h) * num_proc): 39.322
+Coupling cost (coupling time (h) * num_proc): 3.338
+Waiting cost (MPI_get (h) * num_proc): 2.825
+Interpolation cost (h) * num_proc): 0.494
+
+ATMIFS SYPD: 14.929
+ATMIFS CHPY: 462.982
+
+-------------------------
+
+oceanx
+Number of processes: 144
+Coupled execution time: 533.242
+Component execution time: 427.388 (80.15%)
+Coupling time: 105.854 (19.85%)
+Waiting time: 105.283 (19.74%)
+Interpolating time: 0.502 (0.09%)
+Coupled component cost (coupled time (h) * num_proc): 21.330
+Component cost (component time (h) * num_proc): 17.096
+Coupling cost (coupling time (h) * num_proc): 4.234
+Waiting cost (MPI_get (h) * num_proc): 4.211
+Interpolation cost (h) * num_proc): 0.020
+
+oceanx SYPD: 17.170
+oceanx CHPY: 201.286
+
+-------------------------
+
+
+Total coupling cost: 12.04%
+Coupled SYPD: 13.76
+Coupled CHPY: 755.16

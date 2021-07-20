@@ -1,0 +1,33 @@
+Results for RNFMAP:
+
+
+Fields that the component uses during the coupling:
+
+Origin,Operation,Field,Fields,Destination
+RNFMAP,RC,5,R_Runoff_atm:R_Calving_atm,ATMIFS
+RNFMAP,SN,6,R_Runoff_oce,oceanx
+RNFMAP,SN,7,R_Calving_oce,oceanx
+
+-------------------------
+
+Total execution time: 610
+
+Time in interpolation or MPI per Field:
+
+Field,MPI_get,Interpolation,MPI_put,Total
+5,573.405,0.000,0.000,573.405
+6,0.000,12.848,2.570,15.418
+7,0.000,12.700,2.528,15.229
+
+Σ,573,25.5,5.1,604
+
+-------------------------
+
+Dependencies (s):
+
+Component RNFMAP has an overhead of 573.405 (93.95%) seconds due to coupling with ATMIFS
+,MPI_get,Interpolation,MPI_put
+ATMIFS,573.405,0.000,0.000
+Component RNFMAP has an overhead of 30.647 (5.02%) seconds due to coupling with oceanx
+,MPI_get,Interpolation,MPI_put
+oceanx,0.000,25.549,5.098

@@ -1,0 +1,65 @@
+RNFMAP
+Number of processes: 1
+Number of ts: 1888
+Coupled execution time: 793.993
+Component execution time: 6.116 (0.77%)
+Coupling time: 787.878 (99.23%)
+Waiting time: 759.651 (95.67%)
+Interpolation time: 25.347 (3.19%)
+Coupled component cost (coupled time (h) * num_proc): 0.221
+Component cost (component time (h) * num_proc): 0.002
+Coupling cost (coupling time (h) * num_proc): 0.219
+Waiting cost (Waiting time (h) * num_proc): 0.211
+Interpolation cost (Interpolation time (h) * num_proc): 0.007
+Percentual coupling cost (component coupling cost / coupled execution cost): 0.162%
+
+RNFMAP SYPD: 2283.553
+RNFMAP CHPSY: 0.011
+
+-------------------------
+
+ATMIFS
+Number of processes: 384
+Number of ts: 1889
+Coupled execution time: 793.993
+Component execution time: 756.069 (95.22%)
+Coupling time: 37.925 (4.78%)
+Waiting time: 28.916 (3.64%)
+Interpolation time: 8.634 (1.09%)
+Coupled component cost (coupled time (h) * num_proc): 84.693
+Component cost (component time (h) * num_proc): 80.647
+Coupling cost (coupling time (h) * num_proc): 4.045
+Waiting cost (Waiting time (h) * num_proc): 3.084
+Interpolation cost (Interpolation time (h) * num_proc): 0.921
+Percentual coupling cost (component coupling cost / coupled execution cost): 2.987%
+
+ATMIFS SYPD: 18.472
+ATMIFS CHPSY: 498.920
+
+-------------------------
+
+oceanx
+Number of processes: 229
+Number of ts: 1889
+Coupled execution time: 793.993
+Component execution time: 570.078 (71.80%)
+Coupling time: 223.915 (28.20%)
+Waiting time: 222.851 (28.07%)
+Interpolation time: 0.934 (0.12%)
+Coupled component cost (coupled time (h) * num_proc): 50.507
+Component cost (component time (h) * num_proc): 36.263
+Coupling cost (coupling time (h) * num_proc): 14.244
+Waiting cost (Waiting time (h) * num_proc): 14.176
+Interpolation cost (Interpolation time (h) * num_proc): 0.059
+Percentual coupling cost (component coupling cost / coupled execution cost): 10.518%
+
+oceanx SYPD: 24.498
+oceanx CHPSY: 224.341
+
+-------------------------
+
+
+Total coupling cost: 13.67%
+Total coupling execution cost (execution time (h) * num_proc): 135.42
+Coupled SYPD: 17.59
+Coupled CHPSY: 837.77

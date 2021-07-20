@@ -1,0 +1,39 @@
+Results for ATMIFS:
+
+
+Fields that the component uses during the coupling:
+
+Origin,Operation,Field,Fields,Destination,Extra
+ATMIFS,SN,1,A_TauX_oce:A_TauY_oce:A_TauX_ice:A_TauY_ice,oceanx,
+ATMIFS,SN,2,A_TauX_oce:A_TauY_oce:A_TauX_ice:A_TauY_ice,oceanx,
+ATMIFS,SN,3,A_Qns_mix:A_Qs_mix:A_Evap_total:A_Precip_liquid:A_Precip_solid,oceanx,
+ATMIFS,SN,4,A_Qs_ice:A_Qns_ice:A_dQns_dT:A_Evap_ice,oceanx,
+ATMIFS,SN,5,A_Runoff:A_Calving,RNFMAP,
+ATMIFS,RC,8,A_SST:A_Ice_temp:A_Ice_albedo:A_Ice_frac:A_Ice_thickness:A_Snow_thickness,oceanx,
+
+-------------------------
+
+Total execution time: 504
+
+Time in interpolation or MPI per Field:
+
+Field,MPI_get,Interpolation,MPI_put,Total
+1,0,0.737,0.0364,0.773
+2,0,0.498,0.032,0.53
+3,0,1.86,0.0591,1.92
+4,0,0.285,0.0357,0.321
+5,0,1.42,0.052,1.47
+8,58,0,0,58
+
+Σ,58,4.8,0.215,63
+
+-------------------------
+
+Dependencies (s):
+
+Component ATMIFS has an overhead of 1.470 (0.29%) seconds due to coupling with RNFMAP
+,MPI_get,Interpolation,MPI_put
+RNFMAP,0.000,1.418,0.052
+Component ATMIFS has an overhead of 61.548 (12.22%) seconds due to coupling with oceanx
+,MPI_get,Interpolation,MPI_put
+oceanx,58.004,3.381,0.163

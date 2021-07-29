@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-import numpy as np
+import pandas as pd
 
 
 def sypd2chpsy(nproc, sypd):
@@ -14,14 +14,14 @@ class Component:
     def __init__(self, name, nproc, sypd, TTS_r, ETS_r):
         self.name = name
         self.nproc = nproc
-        self.sypd = sypd
+        self.sypd = pd.DataFrame({'nproc': nproc, 'SYPD': sypd})
         self.max_sypd = max(sypd)
-        self.chpsy = sypd2chpsy(nproc, sypd)
-        self.sypd_n = minmax_rescale(sypd)
-        self.chpsy_n = 1 - minmax_rescale(self.chpsy)
+        self.chpsy = pd.DataFrame({'nproc': nproc, 'CHPSY': sypd2chpsy(nproc, sypd)})
+        self.sypd_n = pd.DataFrame({'nproc': nproc, 'SYPD': minmax_rescale(self.sypd.SYPD)})
+        self.chpsy_n = pd.DataFrame({'nproc': nproc, 'CHPSY': 1 - minmax_rescale(self.chpsy.CHPSY)})
         self.TTS_r = TTS_r
         self.ETS_r = ETS_r
-        self.fitness = self.compute_fitness()
+        self.fitness = pd.DataFrame({'nproc': nproc, 'fitness': self.compute_fitness()})
 
 
     def get_nproc_from_sypd(self, sypd):
@@ -34,15 +34,10 @@ class Component:
         return self.fitness[self.nproc == round(nproc)].iloc[0]
 
     def get_fitness2(self, nproc):
-        nproc_rounded = np.round(nproc)
-        r = np.zeros(shape=(nproc_rounded.shape[0], nproc_rounded.shape[1]))
-        for i in range(nproc_rounded.shape[0]):
-            for j in range(nproc_rounded.shape[1]):
-                r[i, j] = self.fitness[self.nproc == nproc_rounded[i, j]]
-        return r
+        return self.fitness[self.nproc.isin(nproc)]
 
     def compute_fitness(self):
-        return self.TTS_r * self.sypd_n + self.ETS_r * self.chpsy_n
+        return self.TTS_r * self.sypd_n.SYPD + self.ETS_r * self.chpsy_n.CHPSY
 
     def plot_sypd(self):
         plt.plot(self.nproc, self.sypd)

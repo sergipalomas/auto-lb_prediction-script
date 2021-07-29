@@ -73,16 +73,16 @@ def interpolate_data(elpin_cores):
     legend = methods.copy()
     legend.insert(0, 'real')
     xnew = np.arange(start, c1.nproc.max() + 1, step)
-    tmp_c1 = pd.Series([c1.sypd[c1.nproc[c1.nproc == n].index[0]] if n in c1.nproc.values
+    tmp_c1 = pd.Series([c1.sypd.SYPD[c1.nproc[c1.nproc == n].index[0]] if n in c1.nproc.values
                         else np.NaN for n in xnew])
     df1 = pd.DataFrame({'nproc': xnew, 'real': tmp_c1})
     for m in methods:
-        f = interpolate.interp1d(c1.nproc, c1.sypd, kind=m, fill_value="extrapolate")
+        f = interpolate.interp1d(c1.nproc, c1.sypd.SYPD, kind=m, fill_value="extrapolate")
         ynew = f(xnew)
         df1[m] = pd.DataFrame({m: ynew})
 
     if show_plots:
-        plt.plot(c1.nproc, c1.sypd, 'o')
+        plt.plot(c1.nproc, c1.sypd.SYPD, 'o')
         for m in methods:
             plt.plot(xnew, df1[m])
         plt.legend(legend)
@@ -90,20 +90,21 @@ def interpolate_data(elpin_cores):
         plt.show()
 
     ## Interpolation
+    # TODO: Create a loop for each component
     elpin_cores = elpin_cores[elpin_cores <= c2.nproc.max()]
     # TODO: Use elpin nproc
     # xnew = pd.Series(elpin_cores)
     xnew = np.arange(start, c2.nproc.max() + 1, step)
-    tmp_c2 = pd.Series([c2.sypd[c2.nproc[c2.nproc == n].index[0]] if n in c2.nproc.values
+    tmp_c2 = pd.Series([c2.sypd.SYPD[c2.nproc[c2.nproc == n].index[0]] if n in c2.nproc.values
                         else np.NaN for n in xnew])
     df2 = pd.DataFrame({'nproc': xnew, 'real': tmp_c2})
     for m in methods:
-        f = interpolate.interp1d(c2.nproc, c2.sypd, kind=m, fill_value="extrapolate")
+        f = interpolate.interp1d(c2.nproc, c2.sypd.SYPD, kind=m, fill_value="extrapolate")
         ynew = f(xnew)
         df2[m] = pd.DataFrame({m: ynew})
 
     if show_plots:
-        plt.plot(c2.nproc, c2.sypd, 'o')
+        plt.plot(c2.nproc, c2.sypd.SYPD, 'o')
         for m in methods:
             plt.plot(xnew, df2[m])
         plt.legend(legend)
@@ -115,7 +116,7 @@ def interpolate_data(elpin_cores):
 
 if __name__ == "__main__":
     # Some Parameters
-    TTS_r = 1
+    TTS_r = 0.5
     ETS_r = 1 - TTS_r
     nodesize = 48
     method = 'linear'  # ['linear', 'slinear', 'quadratic', 'cubic']
@@ -128,13 +129,13 @@ if __name__ == "__main__":
     comp1 = pd.read_csv("./data/IFS_SR_scalability_ece3.csv")
     comp2 = pd.read_csv("./data/NEMO_SR_scalability_ece3.csv")
 
-    from component_class import Component, sypd2chpsy
-
-    comp1['CHPSY'] = sypd2chpsy(comp1.nproc, comp1.SYPD)
-    comp2['CHPSY'] = sypd2chpsy(comp2.nproc, comp2.SYPD)
+    from component_class import Component
 
     c1 = Component('IFS', comp1.nproc, comp1.SYPD, TTS_r, ETS_r)
     c2 = Component('NEMO', comp2.nproc, comp2.SYPD, TTS_r, ETS_r)
+
+    # Interpolate data
+    df1, df2 = interpolate_data(elpin_cores)
 
     if show_plots:
 
@@ -145,21 +146,19 @@ if __name__ == "__main__":
 
         plt.show()
 
-    df1, df2 = interpolate_data(elpin_cores)
-    check_interpo()
+        check_interpo()
 
     # TODO: Select one of the methods
-    comp1_new = pd.DataFrame({'nproc': df1.nproc, 'SYPD': df1[method]})
-    comp2_new = pd.DataFrame({'nproc': df2.nproc, 'SYPD': df2[method]})
+    comp1_interpolated = pd.DataFrame({'nproc': df1.nproc, 'SYPD': df1[method]})
+    comp2_interpolated = pd.DataFrame({'nproc': df2.nproc, 'SYPD': df2[method]})
 
-    c1_n = Component('IFS_n', comp1_new.nproc, comp1_new.SYPD, TTS_r, ETS_r)
-    c2_n = Component('NEMO_n', comp2_new.nproc, comp2_new.SYPD, TTS_r, ETS_r)
+    c1_n = Component('IFS_n', comp1_interpolated.nproc, comp1_interpolated.SYPD, TTS_r, ETS_r)
+    c2_n = Component('NEMO_n', comp2_interpolated.nproc, comp2_interpolated.SYPD, TTS_r, ETS_r)
 
+    # Run LP model
     #find_optimal(c1_n, c2_n)
 
     from brute_force import brute_force
 
-    brute_force(c1_n, c2_n, comp1_new, comp2_new, step=5)
-
-    print("bye")
+    brute_force(c1_n, c2_n, step=5)
 

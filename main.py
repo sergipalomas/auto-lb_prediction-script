@@ -116,10 +116,10 @@ def interpolate_data(elpin_cores):
 
 if __name__ == "__main__":
     # Some Parameters
-    TTS_r = 0.5
+    TTS_r = 0.4
     ETS_r = 1 - TTS_r
     nodesize = 48
-    method = 'linear'  # ['linear', 'slinear', 'quadratic', 'cubic']
+    method = 'cubic'  # ['linear', 'slinear', 'quadratic', 'cubic']
 
     show_plots = False
 
@@ -156,9 +156,10 @@ if __name__ == "__main__":
     c2_n = Component('NEMO_n', comp2_interpolated.nproc, comp2_interpolated.SYPD, TTS_r, ETS_r)
 
     # Run LP model
-    #find_optimal(c1_n, c2_n)
+    # find_optimal(c1_n, c2_n)
 
-    from brute_force import brute_force
+    # from brute_force import brute_force
+    # brute_force(c1_n, c2_n, step=5)
 
-    brute_force(c1_n, c2_n, step=5)
-
+    from iLP import solve_ilp
+    solve_ilp(c1_n, c2_n)

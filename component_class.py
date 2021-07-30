@@ -25,13 +25,13 @@ class Component:
 
 
     def get_nproc_from_sypd(self, sypd):
-        return self.nproc[self.sypd == round(sypd)].iloc[0]
+        return self.nproc[self.sypd.SYPD == round(sypd)].iloc[0]
 
     def get_sypd(self, nproc):
-        return self.sypd[self.nproc == round(nproc)].iloc[0]
+        return self.sypd[self.nproc == nproc].SYPD.iloc[0]
 
     def get_fitness(self, nproc):
-        return self.fitness[self.nproc == round(nproc)].iloc[0]
+        return self.fitness[self.nproc == nproc].fitness.iloc[0]
 
     def get_fitness2(self, nproc):
         return self.fitness[self.nproc.isin(nproc)]
@@ -49,21 +49,26 @@ class Component:
         fig, ax1 = plt.subplots()
 
         ax2 = ax1.twinx()
-        ax1.plot(self.nproc, self.sypd, color='tab:blue')
-        ax2.plot(self.nproc, self.chpsy,  color='tab:orange')
+        self.sypd.plot(x="nproc", y="SYPD", color='tab:blue', ax=ax1, legend=False)
+        self.chpsy.plot(x="nproc", y="CHPSY", color='tab:orange', ax=ax2, legend=False)
 
+        ax1.legend(loc=(0.05, 0.9))
+        ax2.legend(loc=(0.05, 0.83))
         ax1.set_title("Scalability " + self.name)
         ax1.set_xlabel('nproc')
         ax1.set_ylabel('SYPD', color='tab:blue')
         ax2.set_ylabel('CHPSY', color='tab:orange')
 
+        ax1.set_ylim(ymin=0)
+        ax2.set_ylim(ymin=0)
+
         plt.show()
 
     def plot_scalability_n(self):
-
-        plt.plot(self.nproc, self.sypd_n, color='tab:blue')
-        plt.plot(self.nproc, self.chpsy_n, color='tab:orange')
-        plt.plot(self.nproc, self.fitness, color='black')
+        fig, ax1 = plt.subplots()
+        self.sypd_n.plot(x="nproc", y="SYPD", color='tab:blue', ax=ax1)
+        self.chpsy_n.plot(x="nproc", y="CHPSY", color='tab:orange', ax=ax1)
+        self.fitness.plot(x="nproc", y="fitness", color='black', ax=ax1)
 
         plt.title("Scalability rescaled for " + self.name)
         plt.xlabel('nproc')

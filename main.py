@@ -116,7 +116,7 @@ def interpolate_data(elpin_cores):
 
 if __name__ == "__main__":
     # Some Parameters
-    TTS_r = 0.4
+    TTS_r = 0.7
     ETS_r = 1 - TTS_r
     nodesize = 48
     method = 'cubic'  # ['linear', 'slinear', 'quadratic', 'cubic']
@@ -159,7 +159,7 @@ if __name__ == "__main__":
     # find_optimal(c1_n, c2_n)
 
     # from brute_force import brute_force
-    # brute_force(c1_n, c2_n, step=5)
-
+    # brute_force(c1_n, c2_n)
+    #
     from iLP import solve_ilp
     solve_ilp(c1_n, c2_n)

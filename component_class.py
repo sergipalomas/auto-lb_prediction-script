@@ -30,6 +30,9 @@ class Component:
     def get_sypd(self, nproc):
         return self.sypd[self.nproc == nproc].SYPD.iloc[0]
 
+    def get_chpsy(self, nproc):
+        return self.chpsy[self.nproc == nproc].CHPSY.iloc[0]
+
     def get_fitness(self, nproc):
         return self.fitness[self.nproc == nproc].fitness.iloc[0]
 

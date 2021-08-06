@@ -142,10 +142,11 @@ def print_result(c1_n, c2_n, optimal_result):
 
 if __name__ == "__main__":
     # Some Parameters
-    TTS_r = 0.6
+    TTS_r = 0.5
     ETS_r = 1 - TTS_r
     nodesize = 48
     method = 'cubic'  # ['linear', 'slinear', 'quadratic', 'cubic']
+    max_nproc = 1750
 
     show_plots = False
 
@@ -185,7 +186,7 @@ if __name__ == "__main__":
     # find_optimal(c1_n, c2_n)
 
     from brute_force import brute_force
-    optimal_result = brute_force(c1_n, c2_n)
+    optimal_result = brute_force(c1_n, c2_n, max_nproc)
     #
     # from iLP import solve_ilp
     # solve_ilp(c1_n, c2_n)

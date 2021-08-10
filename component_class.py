@@ -48,15 +48,24 @@ class Component:
     def plot_chpsy(self):
         plt.plot(self.nproc, self.chpsy)
 
-    def plot_scalability(self):
+    def plot_scalability(self, *opt_nproc):
         fig, ax1 = plt.subplots()
-
         ax2 = ax1.twinx()
+
         self.sypd.plot(x="nproc", y="SYPD", color='tab:blue', ax=ax1, legend=False)
         self.chpsy.plot(x="nproc", y="CHPSY", color='tab:orange', ax=ax2, legend=False)
 
-        ax1.legend(loc=(0.05, 0.9))
-        ax2.legend(loc=(0.05, 0.83))
+        if len(opt_nproc) == 1:
+            ax1.axvline(x=opt_nproc, ls='-.', c='k', label='Optimal: %i proc' % opt_nproc[0], alpha=1.)
+            sypd_text = ' %.2f' % self.get_sypd(opt_nproc)
+            ax1.plot(opt_nproc[0], self.get_sypd(opt_nproc), 'ko', markersize=5)
+            ax1.text(opt_nproc[0], self.get_sypd(opt_nproc), sypd_text)
+            chpsy_text = ' %i' % self.get_chpsy(opt_nproc)
+            ax2.plot(opt_nproc[0], self.get_chpsy(opt_nproc), 'ko', markersize=5)
+            ax2.text(opt_nproc[0], self.get_chpsy(opt_nproc), chpsy_text)
+
+        ax1.legend(loc=(0.05, 0.85))
+        ax2.legend(loc=(0.05, 0.78))
         ax1.set_title("Scalability " + self.name)
         ax1.set_xlabel('nproc')
         ax1.set_ylabel('SYPD', color='tab:blue')
@@ -64,6 +73,7 @@ class Component:
 
         ax1.set_ylim(ymin=0)
         ax2.set_ylim(ymin=0)
+
 
         plt.show()
 

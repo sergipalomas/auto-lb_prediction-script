@@ -116,28 +116,29 @@ def interpolate_data(elpin_cores):
 
 def print_result(c1_n, c2_n, optimal_result):
     print("Optimal for TTS=%.1f, ETS=%.1f: \n" % (TTS_r, ETS_r))
-    print("Number of processes for %s: %.2f" % (c1_n.name, optimal_result.nproc_x))
-    print("Number of processes for %s: %.2f" % (c2_n.name, optimal_result.nproc_y))
+    print("Number of processes for %s: %.2f" % (c1_n.name, optimal_result['nproc_' + c1_n.name]))
+    print("Number of processes for %s: %.2f" % (c2_n.name, optimal_result['nproc_' + c2_n.name]))
 
     print("Fitness %s: %.2f" % (c1_n.name, optimal_result.f1))
     print("Fitness %s: %.2f" % (c2_n.name, optimal_result.f2))
     print("Objective function: %f" % optimal_result.objective_f)
 
     print("Expected coupled SYPD: %.2f" % optimal_result.SYPD)
-    print("Expected coupled CHPSY: %i" % (c1_n.get_chpsy(optimal_result.nproc_x) + c2_n.get_chpsy(optimal_result.nproc_y)))
-    print("%s CHPSY: %i" % (c1_n.name, c1_n.get_chpsy(optimal_result.nproc_x)))
-    print("%s CHPSY: %i" % (c2_n.name, c2_n.get_chpsy(optimal_result.nproc_y)))
+    print("Expected coupled CHPSY: %i" % (c1_n.get_chpsy(optimal_result['nproc_' + c1_n.name])
+                                          + c2_n.get_chpsy(optimal_result['nproc_' + c2_n.name])))
+    print("%s CHPSY: %i" % (c1_n.name, c1_n.get_chpsy(optimal_result['nproc_' + c1_n.name])))
+    print("%s CHPSY: %i" % (c2_n.name, c2_n.get_chpsy(optimal_result['nproc_' + c2_n.name])))
 
     plt.plot(c1_n.nproc, c1_n.fitness.fitness)
     plt.plot(c2_n.nproc, c2_n.fitness.fitness)
-    plt.plot(optimal_result.nproc_x, c1_n.get_fitness(optimal_result.nproc_x), 'o')
-    plt.plot(optimal_result.nproc_y, c2_n.get_fitness(optimal_result.nproc_y), 'o')
+    plt.plot(optimal_result['nproc_' + c1_n.name], c1_n.get_fitness(optimal_result['nproc_' + c1_n.name]), 'o')
+    plt.plot(optimal_result['nproc_' + c2_n.name], c2_n.get_fitness(optimal_result['nproc_' + c2_n.name]), 'o')
     plt.title("Fitness value")
     plt.legend(['IFS', 'NEMO'])
     plt.show()
 
-    c1_n.plot_scalability()
-    c2_n.plot_scalability()
+    c1_n.plot_scalability(optimal_result['nproc_' + c1_n.name])
+    c2_n.plot_scalability(optimal_result['nproc_' + c2_n.name])
 
 
 if __name__ == "__main__":
@@ -145,8 +146,8 @@ if __name__ == "__main__":
     TTS_r = 0.5
     ETS_r = 1 - TTS_r
     nodesize = 48
-    method = 'cubic'  # ['linear', 'slinear', 'quadratic', 'cubic']
-    max_nproc = 1750
+    method = 'quadratic'  # ['linear', 'slinear', 'quadratic', 'cubic']
+    max_nproc = 1500
 
     show_plots = False
 
@@ -179,8 +180,8 @@ if __name__ == "__main__":
     comp1_interpolated = pd.DataFrame({'nproc': df1.nproc, 'SYPD': df1[method]})
     comp2_interpolated = pd.DataFrame({'nproc': df2.nproc, 'SYPD': df2[method]})
 
-    c1_n = Component('IFS_n', comp1_interpolated.nproc, comp1_interpolated.SYPD, TTS_r, ETS_r)
-    c2_n = Component('NEMO_n', comp2_interpolated.nproc, comp2_interpolated.SYPD, TTS_r, ETS_r)
+    c1_n = Component('IFS', comp1_interpolated.nproc, comp1_interpolated.SYPD, TTS_r, ETS_r)
+    c2_n = Component('NEMO', comp2_interpolated.nproc, comp2_interpolated.SYPD, TTS_r, ETS_r)
 
     # Run LP model
     # find_optimal(c1_n, c2_n)

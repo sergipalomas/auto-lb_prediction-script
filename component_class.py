@@ -11,7 +11,7 @@ def minmax_rescale(series):
 
 
 class Component:
-    def __init__(self, name, nproc, sypd, TTS_r, ETS_r):
+    def __init__(self, name, nproc, sypd, nproc_restriction, TTS_r, ETS_r):
         self.name = name
         self.nproc = nproc
         self.sypd = pd.DataFrame({'nproc': nproc, 'SYPD': sypd})
@@ -22,6 +22,7 @@ class Component:
         self.TTS_r = TTS_r
         self.ETS_r = ETS_r
         self.fitness = pd.DataFrame({'nproc': nproc, 'fitness': self.compute_fitness()})
+        self.nproc_restriction = pd.Series(nproc_restriction)
 
 
     def get_nproc_from_sypd(self, sypd):

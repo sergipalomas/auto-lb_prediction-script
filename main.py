@@ -2,6 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy import interpolate
+import os, glob, sys, yaml
 from cplx_opt import find_optimal
 from mpl_toolkits import mplot3d
 
@@ -11,13 +12,13 @@ def check_interpo():
     c1.plot_scalability_n()
     c2.plot_scalability_n()
 
-    # To plot the SYPD
+    # Plot the SYPD
     fig1, ax1 = plt.subplots()
     fig2, ax2 = plt.subplots()
     ax1.plot(c1.nproc, c1.sypd)
     ax2.plot(c2.nproc, c2.sypd)
 
-    # To plot the fitness
+    # Plot the fitness
     fig3, ax3 = plt.subplots()
     fig4, ax4 = plt.subplots()
     ax3.plot(c1.nproc, c1.compute_fitness())
@@ -64,66 +65,50 @@ def check_interpo():
 
 
 
-def interpolate_data(elpin_cores):
+def interpolate_data(component):
     step = 1
     start = 48
     ## Interpolation
-    #methods = ['linear', 'nearest', 'zero', 'slinear', 'quadratic', 'cubic']
     methods = ['linear', 'slinear', 'quadratic', 'cubic']
     legend = methods.copy()
     legend.insert(0, 'real')
-    xnew = np.arange(start, c1.nproc.max() + 1, step)
-    tmp_c1 = pd.Series([c1.sypd.SYPD[c1.nproc[c1.nproc == n].index[0]] if n in c1.nproc.values
-                        else np.NaN for n in xnew])
-    df1 = pd.DataFrame({'nproc': xnew, 'real': tmp_c1})
-    for m in methods:
-        f = interpolate.interp1d(c1.nproc, c1.sypd.SYPD, kind=m, fill_value="extrapolate")
-        ynew = f(xnew).round(2)
-        df1[m] = pd.DataFrame({m: ynew})
-
-    if show_plots:
-        plt.plot(c1.nproc, c1.sypd.SYPD, 'o')
-        for m in methods:
-            plt.plot(xnew, df1[m])
-        plt.legend(legend)
-        plt.title("Check interpo " + c1.name)
-        plt.show()
 
     ## Interpolation
-    # TODO: Create a loop for each component
-    elpin_cores = elpin_cores[elpin_cores <= c2.nproc.max()]
+    elpin_cores = component.nproc_restriction
     # TODO: Use elpin nproc
     # xnew = pd.Series(elpin_cores)
-    xnew = np.arange(start, c2.nproc.max() + 1, step)
-    tmp_c2 = pd.Series([c2.sypd.SYPD[c2.nproc[c2.nproc == n].index[0]] if n in c2.nproc.values
-                        else np.NaN for n in xnew])
-    df2 = pd.DataFrame({'nproc': xnew, 'real': tmp_c2})
+    xnew = np.arange(start, component.nproc.max() + 1, step)
+    tmp_component = pd.Series([component.sypd.SYPD[component.nproc[component.nproc == n].index[0]]
+                               if n in component.nproc.values else np.NaN for n in xnew])
+    df = pd.DataFrame({'nproc': xnew, 'real': tmp_component})
     for m in methods:
-        f = interpolate.interp1d(c2.nproc, c2.sypd.SYPD, kind=m, fill_value="extrapolate")
+        f = interpolate.interp1d(component.nproc, component.sypd.SYPD, kind=m, fill_value="extrapolate")
         ynew = f(xnew).round(2)
-        df2[m] = pd.DataFrame({m: ynew})
+        df[m] = pd.DataFrame({m: ynew})
 
     if show_plots:
-        plt.plot(c2.nproc, c2.sypd.SYPD, 'o')
+        plt.plot(component.nproc, component.sypd.SYPD, 'o')
         for m in methods:
-            plt.plot(xnew, df2[m])
+            plt.plot(xnew, df[m])
         plt.legend(legend)
-        plt.title("Check interpo " + c2.name)
+        plt.title("Check interpo " + component.name)
         plt.show()
 
-    return df1, df2
+    return df
 
 
-def print_result(c1_n, c2_n, optimal_result):
+def print_result(list_components_class_interpolated, optimal_result):
+    c1_n = list_components_class_interpolated[0]
+    c2_n = list_components_class_interpolated[1]
     print("Optimal for TTS=%.1f, ETS=%.1f: \n" % (TTS_r, ETS_r))
     print("Number of processes for %s: %.2f" % (c1_n.name, optimal_result['nproc_' + c1_n.name]))
     print("Number of processes for %s: %.2f" % (c2_n.name, optimal_result['nproc_' + c2_n.name]))
 
-    print("Fitness %s: %.2f" % (c1_n.name, optimal_result.f1))
-    print("Fitness %s: %.2f" % (c2_n.name, optimal_result.f2))
-    print("Objective function: %f" % optimal_result.objective_f)
+    print("Fitness %s: %.2f" % (c1_n.name, optimal_result['fitness_' + c1_n.name]))
+    print("Fitness %s: %.2f" % (c2_n.name, optimal_result['fitness_' + c2_n.name]))
+    print("Objective function: %f" % optimal_result['objective_f'])
 
-    print("Expected coupled SYPD: %.2f" % optimal_result.SYPD)
+    print("Expected coupled SYPD: %.2f" % optimal_result['SYPD'])
     print("Expected coupled CHPSY: %i" % (c1_n.get_chpsy(optimal_result['nproc_' + c1_n.name])
                                           + c2_n.get_chpsy(optimal_result['nproc_' + c2_n.name])))
     print("%s CHPSY: %i" % (c1_n.name, c1_n.get_chpsy(optimal_result['nproc_' + c1_n.name])))
@@ -134,7 +119,7 @@ def print_result(c1_n, c2_n, optimal_result):
     plt.plot(optimal_result['nproc_' + c1_n.name], c1_n.get_fitness(optimal_result['nproc_' + c1_n.name]), 'o')
     plt.plot(optimal_result['nproc_' + c2_n.name], c2_n.get_fitness(optimal_result['nproc_' + c2_n.name]), 'o')
     plt.title("Fitness value")
-    plt.legend(['IFS', 'NEMO'])
+    plt.legend([c1_n.name, c2_n.name])
     plt.show()
 
     c1_n.plot_scalability(optimal_result['nproc_' + c1_n.name])
@@ -142,54 +127,65 @@ def print_result(c1_n, c2_n, optimal_result):
 
 
 if __name__ == "__main__":
-    # Some Parameters
-    TTS_r = 0.5
+
+    if len(sys.argv) != 2:
+        print("No configuration file provided!")
+        exit(1)
+
+    config_file = open(sys.argv[1])
+    config = yaml.load(config_file, Loader=yaml.FullLoader)
+
+    # Load parameters form the YAML config file
+    num_components = len(config['Components'])
+    TTS_r = config['General']['TTS_ratio']
     ETS_r = 1 - TTS_r
-    nodesize = 48
-    method = 'quadratic'  # ['linear', 'slinear', 'quadratic', 'cubic']
-    max_nproc = 1500
+    nodesize = config['General']['node_size']
+    method = config['General']['interpo_method']  # ['linear', 'slinear', 'quadratic', 'cubic']
+    max_nproc = config['General']['max_nproc']
+    show_plots = config['General']['show_plots']
 
-    show_plots = False
-
-    elpin_cores = pd.Series([48, 92, 144, 192, 229, 285, 331, 380, 411, 476, 521, 563, 605, 665, 694, 759, 806, 826, 905,
+    elPin_cores = pd.Series([48, 92, 144, 192, 229, 285, 331, 380, 411, 476, 521, 563, 605, 665, 694, 759, 806, 826, 905,
                              1008, 1012, 1061, 1129, 1164, 1240, 1275, 1427, 1476, 1632, 1650, 1741, 1870])
 
-    comp1 = pd.read_csv("./data/IFS_SR_scalability_ece3.csv")
-    comp2 = pd.read_csv("./data/NEMO_SR_scalability_ece3.csv")
-
     from component_class import Component
-
-    c1 = Component('IFS', comp1.nproc, comp1.SYPD, TTS_r, ETS_r)
-    c2 = Component('NEMO', comp2.nproc, comp2.SYPD, TTS_r, ETS_r)
-
-    # Interpolate data
-    df1, df2 = interpolate_data(elpin_cores)
-
-    if show_plots:
-
-        c1.plot_fitness()
-        c2.plot_fitness()
-        plt.title("Fitness")
-        plt.legend([c1.name, c2.name])
-
-        plt.show()
-
-        check_interpo()
+    list_components_scalability_df = list()
+    list_components_class = list()
+    list_components_interpolated = list()
+    list_components_class_interpolated = list()
+    for component in config['Components']:
+        component_df = pd.read_csv(component['File'])
+        list_components_scalability_df.append(component_df)
+        component_class = Component(component['Name'], component_df.nproc, component_df.SYPD,
+                                    component['nproc_restriction'], TTS_r, ETS_r)
+        list_components_class.append(component_class)
+        # Interpolate the data
+        df_component_interpolated = interpolate_data(component_class)
+        list_components_interpolated.append(interpolate_data(component_class))
 
     # TODO: Select one of the methods
-    comp1_interpolated = pd.DataFrame({'nproc': df1.nproc, 'SYPD': df1[method]})
-    comp2_interpolated = pd.DataFrame({'nproc': df2.nproc, 'SYPD': df2[method]})
+        comp_interpolated = pd.DataFrame({'nproc': df_component_interpolated.nproc,
+                                           'SYPD': df_component_interpolated[method]})
 
-    c1_n = Component('IFS', comp1_interpolated.nproc, comp1_interpolated.SYPD, TTS_r, ETS_r)
-    c2_n = Component('NEMO', comp2_interpolated.nproc, comp2_interpolated.SYPD, TTS_r, ETS_r)
+        c1_n = Component(component['Name'], comp_interpolated.nproc, comp_interpolated.SYPD,
+                         component['nproc_restriction'], TTS_r, ETS_r)
+        list_components_class_interpolated.append(c1_n)
+
+    if show_plots:
+        list_components_interpolated[0].plot_fitness()
+        list_components_interpolated[1].plot_fitness()
+        plt.title("Fitness")
+        plt.legend([list_components_interpolated[0].name, list_components_interpolated[1].name])
+        plt.show()
+
+        #check_interpo()
 
     # Run LP model
     # find_optimal(c1_n, c2_n)
 
-    from brute_force import brute_force
-    optimal_result = brute_force(c1_n, c2_n, max_nproc)
+    from brute_force import brute_force, brute_force_old
+    optimal_result = brute_force(list_components_class_interpolated, max_nproc)
     #
     # from iLP import solve_ilp
     # solve_ilp(c1_n, c2_n)
 
-    print_result(c1_n, c2_n, optimal_result)
+    print_result(list_components_class_interpolated, optimal_result)

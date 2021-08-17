@@ -2,66 +2,48 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy import interpolate
-import os, glob, sys, yaml
+import sys, yaml
 from cplx_opt import find_optimal
 from mpl_toolkits import mplot3d
 
 
-def check_interpo():
+def check_interpo(num_components, list_components_class, list_components_scalability_df):
 
-    c1.plot_scalability_n()
-    c2.plot_scalability_n()
+    for i in range(num_components):
 
-    # Plot the SYPD
-    fig1, ax1 = plt.subplots()
-    fig2, ax2 = plt.subplots()
-    ax1.plot(c1.nproc, c1.sypd)
-    ax2.plot(c2.nproc, c2.sypd)
+        c1 = list_components_class[i]
 
-    # Plot the fitness
-    fig3, ax3 = plt.subplots()
-    fig4, ax4 = plt.subplots()
-    ax3.plot(c1.nproc, c1.compute_fitness())
-    ax4.plot(c2.nproc, c2.compute_fitness())
+        # Plot the SYPD
+        fig1, ax1 = plt.subplots()
+        c1.sypd.plot(x='nproc', y='SYPD', ax=ax1)
 
-    methods = ['linear', 'slinear', 'quadratic', 'cubic']
-    legend = methods.copy()
-    legend.insert(0, 'Real')
-    for m in methods:
-        ### Start using interpolated data
-        comp1_new = pd.concat({'nproc': df1.nproc, 'SYPD': df1[m]})
-        comp2_new = pd.concat({'nproc': df2.nproc, 'SYPD': df2[m]})
+        # Plot the fitness
+        fig2, ax2 = plt.subplots()
+        c1.fitness.plot(x='nproc', y='fitness', ax=ax2)
 
-        t1 = Component('IFS_n', comp1_new.nproc, comp1_new.SYPD, TTS_r, ETS_r)
-        t2 = Component('NEMO_n', comp2_new.nproc, comp2_new.SYPD, TTS_r, ETS_r)
+        methods = ['linear', 'slinear', 'quadratic', 'cubic']
+        legend = methods.copy()
+        legend.insert(0, 'Real')
+        df1 = list_components_scalability_df[i]
+        for m in methods:
+            ### Start using interpolated data
+            comp1_new = pd.concat({'nproc': df1.nproc, 'SYPD': df1[m]})
+            t1 = Component('IFS_n', comp1_new.nproc, comp1_new.SYPD, c1.nproc_restriction, TTS_r, ETS_r)
 
-        ax1.plot(t1.nproc, t1.sypd)
-        ax2.plot(t2.nproc, t2.sypd)
-        ax3.plot(t1.nproc, t1.compute_fitness())
-        ax4.plot(t2.nproc, t2.compute_fitness())
+            t1.sypd.plot(x='nproc', y='SYPD', ax=ax1)
+            t1.fitness.plot(x='nproc', y='fitness', ax=ax2)
 
+        ax1.set_title(c1.name + " SYPD after interpolating")
+        ax1.set_xlabel('nproc')
+        ax1.set_ylabel('SYPD')
+        ax1.legend(legend)
 
-    ax1.set_title("SYPD after interpo for IFS")
-    ax1.set_xlabel('nproc')
-    ax1.set_ylabel('SYPD')
-    ax1.legend(legend)
+        ax2.set_title(c1.name + " Fitness after interpolating")
+        ax2.set_xlabel('nproc')
+        ax2.set_ylabel('fitness')
+        ax2.legend(legend)
 
-    ax2.set_title("SYPD after interpo for NEMO")
-    ax2.set_xlabel('nproc')
-    ax2.set_ylabel('SYPD')
-    ax2.legend(legend)
-
-    ax3.set_title("Fitness after interpo for IFS")
-    ax3.set_xlabel('nproc')
-    ax3.set_ylabel('fitness')
-    ax3.legend(legend)
-
-    ax4.set_title("Fitness after interpo for NEMO")
-    ax4.set_xlabel('nproc')
-    ax4.set_ylabel('fitness')
-    ax4.legend(legend)
-
-    plt.show()
+        plt.show()
 
 
 
@@ -97,33 +79,39 @@ def interpolate_data(component):
     return df
 
 
-def print_result(list_components_class_interpolated, optimal_result):
-    c1_n = list_components_class_interpolated[0]
-    c2_n = list_components_class_interpolated[1]
-    print("Optimal for TTS=%.1f, ETS=%.1f: \n" % (TTS_r, ETS_r))
-    print("Number of processes for %s: %.2f" % (c1_n.name, optimal_result['nproc_' + c1_n.name]))
-    print("Number of processes for %s: %.2f" % (c2_n.name, optimal_result['nproc_' + c2_n.name]))
+def print_result(num_components, list_components_class_interpolated, optimal_result):
 
-    print("Fitness %s: %.2f" % (c1_n.name, optimal_result['fitness_' + c1_n.name]))
-    print("Fitness %s: %.2f" % (c2_n.name, optimal_result['fitness_' + c2_n.name]))
-    print("Objective function: %f" % optimal_result['objective_f'])
+    print("Optimal for TTS=%.1f, ETS=%.1f:" % (TTS_r, ETS_r))
+    chpsy_acc = 0
+    for component in list_components_class_interpolated:
+        opt_nproc = optimal_result['nproc_' + component.name]
+        print("\n -------------------------------\n")
+        print("Results for component %s:" % component.name)
+        print("Number of processes: %.2f" % opt_nproc)
+        print("Fitness2: %.2f" % (component.get_fitness(opt_nproc)))
+        print("CHPSY: %i" % (component.get_chpsy(opt_nproc)))
+        print("SYPD: %.2f" % component.get_sypd(opt_nproc))
+        component.plot_scalability(opt_nproc)
+        component.plot_scalability_n(opt_nproc)
+        chpsy_acc += component.get_chpsy(opt_nproc)
 
+    print("\n -------------------------------\n")
+    print("Expected coupled CHPSY: %i" % chpsy_acc)
     print("Expected coupled SYPD: %.2f" % optimal_result['SYPD'])
-    print("Expected coupled CHPSY: %i" % (c1_n.get_chpsy(optimal_result['nproc_' + c1_n.name])
-                                          + c2_n.get_chpsy(optimal_result['nproc_' + c2_n.name])))
-    print("%s CHPSY: %i" % (c1_n.name, c1_n.get_chpsy(optimal_result['nproc_' + c1_n.name])))
-    print("%s CHPSY: %i" % (c2_n.name, c2_n.get_chpsy(optimal_result['nproc_' + c2_n.name])))
+    print("Coupled Objective Function: %.3f" % optimal_result['objective_f'])
 
-    plt.plot(c1_n.nproc, c1_n.fitness.fitness)
-    plt.plot(c2_n.nproc, c2_n.fitness.fitness)
-    plt.plot(optimal_result['nproc_' + c1_n.name], c1_n.get_fitness(optimal_result['nproc_' + c1_n.name]), 'o')
-    plt.plot(optimal_result['nproc_' + c2_n.name], c2_n.get_fitness(optimal_result['nproc_' + c2_n.name]), 'o')
-    plt.title("Fitness value")
-    plt.legend([c1_n.name, c2_n.name])
+    fig, ax1 = plt.subplots()
+    legend = list()
+    for i in range(num_components):
+        c1_n = list_components_class_interpolated[i]
+        c1_n.fitness.plot(x='nproc', y='fitness', legend=True, ax=ax1)
+        ax1.plot(optimal_result['nproc_' + c1_n.name], c1_n.get_fitness(optimal_result['nproc_' + c1_n.name]), 'o')
+        legend.append(c1_n.name)
+        legend.append("optimal " + c1_n.name)
+    plt.title("Fitness values")
+    plt.legend(legend)
     plt.show()
 
-    c1_n.plot_scalability(optimal_result['nproc_' + c1_n.name])
-    c2_n.plot_scalability(optimal_result['nproc_' + c2_n.name])
 
 
 if __name__ == "__main__":
@@ -160,7 +148,7 @@ if __name__ == "__main__":
         list_components_class.append(component_class)
         # Interpolate the data
         df_component_interpolated = interpolate_data(component_class)
-        list_components_interpolated.append(interpolate_data(component_class))
+        list_components_interpolated.append(df_component_interpolated)
 
     # TODO: Select one of the methods
         comp_interpolated = pd.DataFrame({'nproc': df_component_interpolated.nproc,
@@ -171,21 +159,24 @@ if __name__ == "__main__":
         list_components_class_interpolated.append(c1_n)
 
     if show_plots:
-        list_components_interpolated[0].plot_fitness()
-        list_components_interpolated[1].plot_fitness()
-        plt.title("Fitness")
-        plt.legend([list_components_interpolated[0].name, list_components_interpolated[1].name])
-        plt.show()
+        # legend = list()
+        # for i in range(num_components):
+        #     list_components_class_interpolated[i].plot_fitness()
+        #     legend.append(list_components_class_interpolated[i].name)
+        # plt.title("Fitness")
+        # plt.legend(legend)
+        # plt.show()
 
-        #check_interpo()
+        check_interpo(num_components, list_components_class_interpolated, list_components_interpolated)
 
     # Run LP model
     # find_optimal(c1_n, c2_n)
 
-    from brute_force import brute_force, brute_force_old
-    optimal_result = brute_force(list_components_class_interpolated, max_nproc)
-    #
     # from iLP import solve_ilp
     # solve_ilp(c1_n, c2_n)
 
-    print_result(list_components_class_interpolated, optimal_result)
+
+    from brute_force import brute_force, brute_force_old
+    optimal_result = brute_force(num_components, list_components_class_interpolated, max_nproc)
+
+    print_result(num_components, list_components_class_interpolated, optimal_result)

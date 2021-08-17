@@ -75,20 +75,46 @@ class Component:
         ax1.set_ylim(ymin=0)
         ax2.set_ylim(ymin=0)
 
-
         plt.show()
 
-    def plot_scalability_n(self):
+    def plot_scalability_n(self, *opt_nproc):
         fig, ax1 = plt.subplots()
         self.sypd_n.plot(x="nproc", y="SYPD", color='tab:blue', ax=ax1)
         self.chpsy_n.plot(x="nproc", y="CHPSY", color='tab:orange', ax=ax1)
         self.fitness.plot(x="nproc", y="fitness", color='black', ax=ax1)
 
+        if len(opt_nproc) == 1:
+            ax1.axvline(x=opt_nproc, ls='-.', c='k', label='Optimal: %i proc' % opt_nproc[0], alpha=1.)
+            sypd_n_value = self.sypd_n[self.sypd_n.nproc == opt_nproc[0]].SYPD
+            sypd_text = ' %.2f' % sypd_n_value
+            ax1.plot(opt_nproc[0], sypd_n_value, 'ko', markersize=5)
+            ax1.text(opt_nproc[0], sypd_n_value, sypd_text)
+            chpsy_n_value = self.chpsy_n[self.chpsy_n.nproc == opt_nproc[0]].CHPSY
+            chpsy_text = ' %.2f' % chpsy_n_value
+            ax1.plot(opt_nproc[0], chpsy_n_value, 'ko', markersize=5)
+            ax1.text(opt_nproc[0], chpsy_n_value, chpsy_text)
+            fitness_value = self.fitness[self.fitness.nproc == opt_nproc[0]].fitness
+            fitness_text = ' %.2f' % fitness_value
+            ax1.plot(opt_nproc[0], fitness_value, 'ko', markersize=5)
+            ax1.text(opt_nproc[0], fitness_value, fitness_text)
+
+
         plt.title("Scalability rescaled for " + self.name)
         plt.xlabel('nproc')
-        plt.legend(['TTS', 'ETS', 'TTS ratio = %.1f' % self.TTS_r + '\n' + 'ETS ratio = %.1f' % self.ETS_r])
+        plt.legend(['TTS ratio', 'ETS ratio', 'Fitness'])
 
         plt.show()
 
-    def plot_fitness(self):
-        plt.plot(self.nproc, self.fitness)
+    def plot_fitness(self, *opt_nproc):
+        fig, ax1 = plt.subplots()
+        self.fitness.plot(x="nproc", y="fitness", color='tab:blue', ax=ax1, legend=False)
+        if len(opt_nproc) == 1:
+            ax1.plot(opt_nproc[0], self.get_fitness(opt_nproc), 'ro', markersize=5)
+            fitness_value = self.fitness[self.fitness.nproc == opt_nproc[0]].fitness
+            fitness_text = ' %.2f' % fitness_value
+            ax1.text(opt_nproc[0], fitness_value, fitness_text)
+
+
+        plot_title = "Fitness for component " + self.name
+        ax1.set_title(plot_title)
+        ax1.set_ylabel("Fitness")

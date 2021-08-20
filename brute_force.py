@@ -101,7 +101,7 @@ def brute_force_old(c1_n, c2_n, max_nproc):
     return optimal_result
 
 
-def brute_force(num_components, list_components_class_interpolated, max_nproc):
+def brute_force(num_components, list_components_class_interpolated, max_nproc, show_plots):
 
     # Sanity check for max_nproc parameter
     sum_max = 0
@@ -135,9 +135,7 @@ def brute_force(num_components, list_components_class_interpolated, max_nproc):
     elif num_components == 2:
         c1_n = list_components_class_interpolated[0]
         c2_n = list_components_class_interpolated[1]
-        sypd_c1 = c1_n.nproc.apply(lambda x: c1_n.get_sypd(x))
-        sypd_c2 = c2_n.nproc.apply(lambda x: c2_n.get_sypd(x))
-        diff_tmp = pd.DataFrame(index=sypd_c1, columns=sypd_c2)
+        diff_tmp = pd.DataFrame(index=c1_n.sypd.SYPD, columns=c2_n.sypd.SYPD)
         diff_mx = diff_tmp.apply(lambda col: abs(col.name - col.index))
         f1 = c1_n.get_fitness2(c1_n.nproc).fitness
         f2 = c2_n.get_fitness2(c2_n.nproc).fitness
@@ -158,43 +156,51 @@ def brute_force(num_components, list_components_class_interpolated, max_nproc):
         # final_rel = diff_mx2[diff_mx2 < 0.03]
 
         # 3D Plot
-        X, Y = np.meshgrid(c1_n.nproc, c2_n.nproc)
-        Z = fitness_mx.to_numpy()
+        if show_plots:
+            X, Y = np.meshgrid(c1_n.nproc, c2_n.nproc)
+            Z = fitness_mx.to_numpy()
 
-        Z_mk_same_sypd = final_fitness.to_numpy().T
-        mk = X + Y > max_nproc
-        Z_mk_max_nproc = Z.T * mk
-        Z_mk_max_nproc[Z_mk_max_nproc == 0] = np.nan
-        fig, ax = plt.subplots(4, 2, figsize=(8, 20), subplot_kw=dict(projection="3d"))
-        for idx, angle in enumerate(range(181, 362, 30)):
-            i = int(idx / 2)
-            j = int(idx % 2)
-            ax[i, j].plot_surface(X, Y, Z.T, cmap='viridis')
-            ax[i, j].plot_surface(X, Y, Z_mk_same_sypd, color='gold')
-            ax[i, j].plot_surface(X, Y, Z_mk_max_nproc, color='lightcoral', alpha=.5)
-            ax[i, j].set_title("angle=" + str(angle))
-            ax[i, j].set_xlabel(c1_n.name)
-            ax[i, j].set_ylabel(c2_n.name)
-            ax[i, j].set_zlabel('obj_f')
-            ax[i, j].view_init(elev=20., azim=angle)
+            Z_mk_same_sypd = final_fitness.to_numpy().T
+            mk = X + Y > max_nproc
+            Z_mk_max_nproc = Z.T * mk
+            Z_mk_max_nproc[Z_mk_max_nproc == 0] = np.nan
+            fig, ax = plt.subplots(4, 2, figsize=(8, 20), subplot_kw=dict(projection="3d"))
+            for idx, angle in enumerate(range(181, 362, 30)):
+                i = int(idx / 2)
+                j = int(idx % 2)
+                ax[i, j].plot_surface(X, Y, Z.T, cmap='viridis')
+                ax[i, j].plot_surface(X, Y, Z_mk_same_sypd, color='gold')
+                ax[i, j].plot_surface(X, Y, Z_mk_max_nproc, color='lightcoral', alpha=.5)
+                ax[i, j].set_title("angle=" + str(angle))
+                ax[i, j].set_xlabel(c1_n.name)
+                ax[i, j].set_ylabel(c2_n.name)
+                ax[i, j].set_zlabel('obj_f')
+                ax[i, j].view_init(elev=20., azim=angle)
 
-        ax[3, 1].plot_surface(X, Y, Z.T, cmap='viridis')
-        ax[3, 1].plot_surface(X, Y, Z_mk_same_sypd, color='gold')
-        ax[3, 1].plot_surface(X, Y, Z_mk_max_nproc, color='lightcoral')
-        ax[3, 1].set_title("Objective Function")
-        ax[3, 1].set_xlabel(c1_n.name)
-        ax[3, 1].set_ylabel(c2_n.name)
-        ax[3, 1].set_zlabel('obj_f')
-        ax[3, 1].view_init(elev=270., azim=0.)
-        plt.show()
+            ax[3, 1].plot_surface(X, Y, Z.T, cmap='viridis')
+            ax[3, 1].plot_surface(X, Y, Z_mk_same_sypd, color='gold')
+            ax[3, 1].plot_surface(X, Y, Z_mk_max_nproc, color='lightcoral')
+            ax[3, 1].set_title("Objective Function")
+            ax[3, 1].set_xlabel(c1_n.name)
+            ax[3, 1].set_ylabel(c2_n.name)
+            ax[3, 1].set_zlabel('obj_f')
+            ax[3, 1].view_init(elev=270., azim=0.)
+            plt.show()
 
         # Build the final solution
-        nproc_c1 = final_fitness.mean(axis=1).idxmax()
-        nproc_c2 = final_fitness.mean(axis=0).idxmax()
+        c1_sum = final_fitness.sum(axis=1)
+        c2_sum = final_fitness.sum(axis=0)
+        count1 = final_fitness.count(axis=1)
+        count2 = final_fitness.count(axis=0)
+        df = pd.DataFrame(index=c1_n.nproc, columns=c2_n.nproc)
+        rt = df.apply(lambda col: (c1_sum + c2_sum[col.name]) / (count1 + count2[col.name]))
+        rt_final = rt[mask]
+        nproc_c1 = rt_final.max(axis=1).idxmax()
+        nproc_c2 = rt_final.max(axis=0).idxmax()
 
         # Sanity check: In case the combination of component processes does not map into a viable solution using max of
         # means, just select the maximum of the matrix
-        if final_fitness.loc[nproc_c1, nproc_c2] == np.nan:
+        if pd.isna(final_fitness.loc[nproc_c1, nproc_c2]):
             print("Singularity Error. Using the maximum of the fitness matrix")
             nproc_c1 = final_fitness.max(axis=1).idxmax()
             nproc_c2 = final_fitness.max(axis=0).idxmax()
@@ -208,5 +214,9 @@ def brute_force(num_components, list_components_class_interpolated, max_nproc):
             "SYPD": min(c1_n.get_sypd(nproc_c1), c2_n.get_sypd(nproc_c2)),
         }
 
+    elif num_components == 3:
+        c1_n = list_components_class_interpolated[0]
+        c2_n = list_components_class_interpolated[1]
+        c3_n = list_components_class_interpolated[2]
     return optimal_result
 

@@ -60,6 +60,8 @@ def interpolate_data(component):
     # TODO: Use elpin nproc
     # xnew = pd.Series(elpin_cores)
     xnew = np.arange(start, component.nproc.max() + 1, step)
+    if component.nproc_restriction.shape[0] != 0:
+        xnew = np.array(component.nproc_restriction)
     tmp_component = pd.Series([component.sypd.SYPD[component.nproc[component.nproc == n].index[0]]
                                if n in component.nproc.values else np.NaN for n in xnew])
     df = pd.DataFrame({'nproc': xnew, 'real': tmp_component})
@@ -88,7 +90,7 @@ def print_result(num_components, list_components_class_interpolated, optimal_res
         print("\n -------------------------------\n")
         print("Results for component %s:" % component.name)
         print("Number of processes: %.2f" % opt_nproc)
-        print("Fitness2: %.2f" % (component.get_fitness(opt_nproc)))
+        print("Fitness: %.2f" % (component.get_fitness(opt_nproc)))
         print("CHPSY: %i" % (component.get_chpsy(opt_nproc)))
         print("SYPD: %.2f" % component.get_sypd(opt_nproc))
         component.plot_scalability(opt_nproc)
@@ -109,9 +111,8 @@ def print_result(num_components, list_components_class_interpolated, optimal_res
         legend.append(c1_n.name)
         legend.append("optimal " + c1_n.name)
     plt.title("Fitness values")
-    plt.legend(legend)
+    plt.legend(legend, loc=(0, 1.05))
     plt.show()
-
 
 
 if __name__ == "__main__":
@@ -143,6 +144,13 @@ if __name__ == "__main__":
     for component in config['Components']:
         component_df = pd.read_csv(component['File'])
         list_components_scalability_df.append(component_df)
+        # Make sure that the nproc restriction is inside the range of scalability provided for that component
+        if component['nproc_restriction'] != None:
+            component['nproc_restriction'] = [np for np in component['nproc_restriction'] if
+                                              np <= component_df.nproc.max() and np >= component_df.nproc.min()]
+            print("Component %s has a nproc restriction:" % component['Name'])
+            print("[", *component['nproc_restriction'],"]")
+
         component_class = Component(component['Name'], component_df.nproc, component_df.SYPD,
                                     component['nproc_restriction'], TTS_r, ETS_r)
         list_components_class.append(component_class)
@@ -159,14 +167,6 @@ if __name__ == "__main__":
         list_components_class_interpolated.append(c1_n)
 
     if show_plots:
-        # legend = list()
-        # for i in range(num_components):
-        #     list_components_class_interpolated[i].plot_fitness()
-        #     legend.append(list_components_class_interpolated[i].name)
-        # plt.title("Fitness")
-        # plt.legend(legend)
-        # plt.show()
-
         check_interpo(num_components, list_components_class_interpolated, list_components_interpolated)
 
     # Run LP model
@@ -177,6 +177,6 @@ if __name__ == "__main__":
 
 
     from brute_force import brute_force, brute_force_old
-    optimal_result = brute_force(num_components, list_components_class_interpolated, max_nproc)
+    optimal_result = brute_force(num_components, list_components_class_interpolated, max_nproc, show_plots)
 
     print_result(num_components, list_components_class_interpolated, optimal_result)

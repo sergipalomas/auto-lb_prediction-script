@@ -7,7 +7,10 @@ def sypd2chpsy(nproc, sypd):
 
 
 def minmax_rescale(series):
-    return (series - series.min()) / (series.max() - series.min())
+    if series.shape[0] > 1:
+        return (series - series.min()) / (series.max() - series.min())
+    else:
+        return 1
 
 
 class Component:
@@ -31,8 +34,14 @@ class Component:
     def get_sypd(self, nproc):
         return self.sypd[self.nproc == nproc].SYPD.iloc[0]
 
+    def get_sypd_n(self, nproc):
+        return self.sypd_n[self.sypd_n.nproc == nproc].SYPD
+
     def get_chpsy(self, nproc):
         return self.chpsy[self.nproc == nproc].CHPSY.iloc[0]
+
+    def get_chpsy_n(self, nproc):
+        return self.chpsy_n[self.chpsy_n.nproc == nproc].CHPSY
 
     def get_fitness(self, nproc):
         return self.fitness[self.nproc == nproc].fitness.iloc[0]
@@ -53,21 +62,32 @@ class Component:
         fig, ax1 = plt.subplots()
         ax2 = ax1.twinx()
 
-        self.sypd.plot(x="nproc", y="SYPD", color='tab:blue', ax=ax1, legend=False)
-        self.chpsy.plot(x="nproc", y="CHPSY", color='tab:orange', ax=ax2, legend=False)
-
         if len(opt_nproc) == 1:
-            ax1.axvline(x=opt_nproc, ls='-.', c='k', label='Optimal: %i proc' % opt_nproc[0], alpha=1.)
-            sypd_text = ' %.2f' % self.get_sypd(opt_nproc)
-            ax1.plot(opt_nproc[0], self.get_sypd(opt_nproc), 'ko', markersize=5)
-            ax1.text(opt_nproc[0], self.get_sypd(opt_nproc), sypd_text)
-            chpsy_text = ' %i' % self.get_chpsy(opt_nproc)
-            ax2.plot(opt_nproc[0], self.get_chpsy(opt_nproc), 'ko', markersize=5)
-            ax2.text(opt_nproc[0], self.get_chpsy(opt_nproc), chpsy_text)
+            optimal_nproc = opt_nproc[0]
+            optimal_sypd = self.get_sypd(opt_nproc)
+            optimal_chpsy = self.get_chpsy(opt_nproc)
+            ax1.axvline(x=opt_nproc, ls='-.', c='k', label='Optimal: %i proc' % optimal_nproc)
+            self.sypd.plot(x="nproc", y="SYPD", color='tab:blue', ax=ax1, label='SYPD: %.2f' % optimal_sypd, legend=False)
+            self.chpsy.plot(x="nproc", y="CHPSY", color='tab:orange', ax=ax2, label='CHPSY: %i' % optimal_chpsy,legend=False)
+            sypd_text = ' %.2f' % optimal_sypd
+            ax1.plot(opt_nproc[0], optimal_sypd, 'ko', markersize=5)
+            ax1.text(opt_nproc[0], optimal_sypd, sypd_text)
+            chpsy_text = ' %i' % optimal_chpsy
+            ax2.plot(opt_nproc[0], optimal_chpsy, 'ko', markersize=5)
+            ax2.text(opt_nproc[0], optimal_chpsy, chpsy_text)
+            lns = [ax1.lines[0], ax1.lines[1], ax2.lines[0]]
+            labels = [l.get_label() for l in lns]
+            ax1.legend(handles=lns, labels=labels, loc=0)
+            ax1.set_title("Solution for " + self.name)
 
-        ax1.legend(loc=(0.05, 0.85))
-        ax2.legend(loc=(0.05, 0.78))
-        ax1.set_title("Scalability " + self.name)
+        else:
+            self.sypd.plot(x="nproc", y="SYPD", color='tab:blue', ax=ax1, legend=False)
+            self.chpsy.plot(x="nproc", y="CHPSY", color='tab:orange', ax=ax2, legend=False)
+            lns = [ax1.lines[1], ax2.lines[0]]
+            labels = [l.get_label() for l in lns]
+            ax1.legend(handles=lns, labels=labels, loc=0)
+            ax1.set_title("Solution for " + self.name)
+
         ax1.set_xlabel('nproc')
         ax1.set_ylabel('SYPD', color='tab:blue')
         ax2.set_ylabel('CHPSY', color='tab:orange')
@@ -84,24 +104,25 @@ class Component:
         self.fitness.plot(x="nproc", y="fitness", color='black', ax=ax1)
 
         if len(opt_nproc) == 1:
-            ax1.axvline(x=opt_nproc, ls='-.', c='k', label='Optimal: %i proc' % opt_nproc[0], alpha=1.)
-            sypd_n_value = self.sypd_n[self.sypd_n.nproc == opt_nproc[0]].SYPD
-            sypd_text = ' %.2f' % sypd_n_value
-            ax1.plot(opt_nproc[0], sypd_n_value, 'ko', markersize=5)
-            ax1.text(opt_nproc[0], sypd_n_value, sypd_text)
-            chpsy_n_value = self.chpsy_n[self.chpsy_n.nproc == opt_nproc[0]].CHPSY
-            chpsy_text = ' %.2f' % chpsy_n_value
-            ax1.plot(opt_nproc[0], chpsy_n_value, 'ko', markersize=5)
-            ax1.text(opt_nproc[0], chpsy_n_value, chpsy_text)
-            fitness_value = self.fitness[self.fitness.nproc == opt_nproc[0]].fitness
-            fitness_text = ' %.2f' % fitness_value
-            ax1.plot(opt_nproc[0], fitness_value, 'ko', markersize=5)
-            ax1.text(opt_nproc[0], fitness_value, fitness_text)
+            optimal_nproc = opt_nproc[0]
+            optimal_sypd_n = self.get_sypd_n(optimal_nproc)
+            optimal_chpsy_n = self.get_chpsy_n(optimal_nproc)
+            optimal_fitness = self.get_fitness(optimal_nproc)
+            ax1.axvline(x=optimal_nproc, ls='-.', c='k', label='Optimal: %i proc' % optimal_nproc, alpha=1.)
+            sypd_text = ' %.2f' % optimal_sypd_n
+            ax1.plot(optimal_nproc, optimal_sypd_n, 'ko', markersize=5)
+            ax1.text(optimal_nproc, optimal_sypd_n, sypd_text)
+            chpsy_text = ' %.2f' % optimal_chpsy_n
+            ax1.plot(optimal_nproc, optimal_chpsy_n, 'ko', markersize=5)
+            ax1.text(optimal_nproc, optimal_chpsy_n, chpsy_text)
+            fitness_text = ' %.2f' % optimal_fitness
+            ax1.plot(optimal_nproc, optimal_fitness, 'ko', markersize=5)
+            ax1.text(optimal_nproc, optimal_fitness, fitness_text)
 
-
-        plt.title("Scalability rescaled for " + self.name)
         plt.xlabel('nproc')
-        plt.legend(['TTS ratio', 'ETS ratio', 'Fitness'])
+        plt.suptitle("Scalability rescaled and optimal value for " + self.name)
+        plt.title("TTS: %.2f    ETS: %.2f" % (self.TTS_r, self.ETS_r), fontsize=10)
+        plt.legend(['TTS ratio', 'ETS ratio', 'Fitness'], loc=0)
 
         plt.show()
 
@@ -109,11 +130,11 @@ class Component:
         fig, ax1 = plt.subplots()
         self.fitness.plot(x="nproc", y="fitness", color='tab:blue', ax=ax1, legend=False)
         if len(opt_nproc) == 1:
-            ax1.plot(opt_nproc[0], self.get_fitness(opt_nproc), 'ro', markersize=5)
-            fitness_value = self.fitness[self.fitness.nproc == opt_nproc[0]].fitness
-            fitness_text = ' %.2f' % fitness_value
-            ax1.text(opt_nproc[0], fitness_value, fitness_text)
-
+            optimal_nproc = opt_nproc[0]
+            ax1.plot(optimal_nproc, self.get_fitness(opt_nproc), 'ro', markersize=5)
+            optimal_fitness = self.get_fitness(optimal_nproc)
+            fitness_text = ' %.2f' % optimal_fitness
+            ax1.text(optimal_nproc, optimal_fitness, fitness_text)
 
         plot_title = "Fitness for component " + self.name
         ax1.set_title(plot_title)

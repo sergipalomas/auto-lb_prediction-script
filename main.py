@@ -84,20 +84,23 @@ def interpolate_data(component):
 def print_result(num_components, list_components_class_interpolated, optimal_result):
 
     print("Optimal for TTS=%.1f, ETS=%.1f:" % (TTS_r, ETS_r))
+    nproc_acc = 0
     chpsy_acc = 0
     for component in list_components_class_interpolated:
         opt_nproc = optimal_result['nproc_' + component.name]
         print("\n -------------------------------\n")
         print("Results for component %s:" % component.name)
-        print("Number of processes: %.2f" % opt_nproc)
+        print("Number of processes: %i" % opt_nproc)
         print("Fitness: %.2f" % (component.get_fitness(opt_nproc)))
         print("CHPSY: %i" % (component.get_chpsy(opt_nproc)))
         print("SYPD: %.2f" % component.get_sypd(opt_nproc))
         component.plot_scalability(opt_nproc)
         component.plot_scalability_n(opt_nproc)
+        nproc_acc += opt_nproc
         chpsy_acc += component.get_chpsy(opt_nproc)
 
     print("\n -------------------------------\n")
+    print("Total number of processes: %i" % nproc_acc)
     print("Expected coupled CHPSY: %i" % chpsy_acc)
     print("Expected coupled SYPD: %.2f" % optimal_result['SYPD'])
     print("Coupled Objective Function: %.3f" % optimal_result['objective_f'])

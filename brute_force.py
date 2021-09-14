@@ -131,25 +131,37 @@ def brute_force(num_components, list_components_class_interpolated, max_nproc, s
             "SYPD": c1_n.get_sypd(opt_nproc),
         }
 
-
     elif num_components == 2:
         c1_n = list_components_class_interpolated[0]
         c2_n = list_components_class_interpolated[1]
+
+        # SYPD difference matrix
         diff_tmp = pd.DataFrame(index=c1_n.sypd.SYPD, columns=c2_n.sypd.SYPD)
         diff_mx = diff_tmp.apply(lambda col: abs(col.name - col.index))
+        diff_mx.columns = c2_n.nproc
+        diff_mx.index = c1_n.nproc
+
+        # Coupled fitness matrix
         f1 = c1_n.get_fitness2(c1_n.nproc).fitness
         f2 = c2_n.get_fitness2(c2_n.nproc).fitness
         fitness_mx_tmp = pd.DataFrame(index=f1, columns=f2)
         fitness_mx = fitness_mx_tmp.apply(lambda col: col.index + col.name)
-        diff_mx.columns = c2_n.nproc
-        diff_mx.index = c1_n.nproc
         fitness_mx.columns = c2_n.nproc
         fitness_mx.index = c1_n.nproc
+
+        # nproc matrix
+        nproc_tmp = pd.DataFrame(index=c1_n.nproc, columns=c2_n.nproc)
+        nproc_mx = nproc_tmp.apply(lambda col: col.name + col.index)
+
         # Filter only the combinations of processes of each component so that the difference of the SYPD is less than a threshold
         # TODO: Think the threshold parameter
-        mask = diff_mx < 1
-        final_abs = diff_mx[mask]
-        final_fitness = fitness_mx[mask]
+        mask_same_SYPD = diff_mx < .3
+        fitness_same_SYPD = fitness_mx[mask_same_SYPD]
+
+        # Filter to match the max_nproc restriction
+        mask_max_nproc = nproc_mx < max_nproc
+        final_fitness = fitness_same_SYPD[mask_max_nproc]
+
 
         # TODO: Check this relative method
         # diff_mx2 = diff_tmp.apply(lambda col: abs(col.name - col.index) / col.name)
@@ -194,7 +206,7 @@ def brute_force(num_components, list_components_class_interpolated, max_nproc, s
         count2 = final_fitness.count(axis=0)
         df = pd.DataFrame(index=c1_n.nproc, columns=c2_n.nproc)
         rt = df.apply(lambda col: (c1_sum + c2_sum[col.name]) / (count1 + count2[col.name]))
-        rt_final = rt[mask]
+        rt_final = rt[mask_same_SYPD]
         nproc_c1 = rt_final.max(axis=1).idxmax()
         nproc_c2 = rt_final.max(axis=0).idxmax()
 

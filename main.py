@@ -121,7 +121,7 @@ def print_result(num_components, list_components_class_interpolated, optimal_res
 if __name__ == "__main__":
 
     if len(sys.argv) != 2:
-        print("No configuration file provided!")
+        print("No configuration file provided!asdf")
         exit(1)
 
     config_file = open(sys.argv[1])

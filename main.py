@@ -3,8 +3,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy import interpolate
 import sys, yaml
-from cplx_opt import find_optimal
-from mpl_toolkits import mplot3d
 
 
 def check_interpo(num_components, list_components_class, list_components_scalability_df):

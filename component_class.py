@@ -98,7 +98,7 @@ class Component:
         plt.show()
 
     def plot_scalability_n(self, *opt_nproc):
-        fig, ax1 = plt.subplots(constrained_layout=True)
+        fig, ax1 = plt.subplots()
         self.sypd_n.plot(x="nproc", y="SYPD", color='tab:blue', ax=ax1)
         self.chpsy_n.plot(x="nproc", y="CHPSY", color='tab:orange', ax=ax1)
         self.fitness.plot(x="nproc", y="fitness", color='black', ax=ax1)

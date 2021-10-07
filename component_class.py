@@ -98,7 +98,7 @@ class Component:
         plt.show()
 
     def plot_scalability_n(self, *opt_nproc):
-        fig, ax1 = plt.subplots()
+        fig, ax1 = plt.subplots(constrained_layout=True)
         self.sypd_n.plot(x="nproc", y="SYPD", color='tab:blue', ax=ax1)
         self.chpsy_n.plot(x="nproc", y="CHPSY", color='tab:orange', ax=ax1)
         self.fitness.plot(x="nproc", y="fitness", color='black', ax=ax1)
@@ -120,8 +120,8 @@ class Component:
             ax1.text(optimal_nproc, optimal_fitness, fitness_text)
 
         plt.xlabel('nproc')
-        plt.suptitle("Scalability rescaled and optimal value for " + self.name)
-        plt.title("TTS: %.2f    ETS: %.2f" % (self.TTS_r, self.ETS_r), fontsize=10)
+        ax1.set_title("Scalability rescaled and optimal value for " + self.name + "\n" + "TTS: %.2f    ETS: %.2f" %
+                      (self.TTS_r, self.ETS_r))
         plt.legend(['TTS ratio', 'ETS ratio', 'Fitness'], loc=0)
 
         plt.show()

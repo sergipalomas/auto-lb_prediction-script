@@ -159,11 +159,22 @@ def brute_force(num_components, list_components_class_interpolated, max_nproc, s
         fitness_same_SYPD = fitness_mx[mask_same_SYPD]
 
         # Filter to match the max_nproc restriction
-        mask_max_nproc = nproc_mx < max_nproc
+        mask_max_nproc = nproc_mx <= max_nproc
         final_fitness = fitness_same_SYPD[mask_max_nproc]
 
 
         # TODO: Check this relative method
+
+        filer_for_each_col = pd.Series(c1_n.sypd.SYPD.values * 0.1, index=c1_n.nproc)
+        filter_col = diff_mx.le(filer_for_each_col, axis='index')
+        filer_for_each_row = pd.Series(c2_n.sypd.SYPD.values * 0.1, index=c2_n.nproc)
+        filter_row = diff_mx.le(filer_for_each_row, axis='columns')
+        final_mask = filter_col * filter_row
+        fitness_same_SYPD = fitness_mx[final_mask]
+        # Filter to match the max_nproc restriction
+        mask_max_nproc = nproc_mx <= max_nproc
+        final_fitness = fitness_same_SYPD[mask_max_nproc]
+
         # diff_mx2 = diff_tmp.apply(lambda col: abs(col.name - col.index) / col.name)
         # final_rel = diff_mx2[diff_mx2 < 0.03]
 
@@ -205,7 +216,7 @@ def brute_force(num_components, list_components_class_interpolated, max_nproc, s
         count1 = final_fitness.count(axis=1)
         count2 = final_fitness.count(axis=0)
         df = pd.DataFrame(index=c1_n.nproc, columns=c2_n.nproc)
-        rt = df.apply(lambda col: (c1_sum + c2_sum[col.name]) / (count1 + count2[col.name]))
+        rt = df.apply(lambda col: (c1_sum/count1 + c2_sum[col.name])/count2[col.name])
         rt_final = rt[mask_same_SYPD]
         nproc_c1 = rt_final.max(axis=1).idxmax()
         nproc_c2 = rt_final.max(axis=0).idxmax()

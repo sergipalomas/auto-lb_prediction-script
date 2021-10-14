@@ -92,8 +92,8 @@ class Component:
         ax1.set_ylabel('SYPD', color='tab:blue')
         ax2.set_ylabel('CHPSY', color='tab:orange')
 
-        ax1.set_ylim(ymin=0)
-        ax2.set_ylim(ymin=0)
+        ax1.set_ylim(bottom=0)
+        ax2.set_ylim(bottom=0)
 
         plt.show()
 

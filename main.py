@@ -47,19 +47,16 @@ def check_interpo(num_components, list_components_class, list_components_scalabi
 
 def interpolate_data(component):
     step = 1
-    start = 48
+    start = component.nproc.min()
     ## Interpolation
     methods = ['linear', 'slinear', 'quadratic', 'cubic']
     legend = methods.copy()
     legend.insert(0, 'real')
 
     ## Interpolation
-    elpin_cores = component.nproc_restriction
-    # TODO: Use elpin nproc
-    # xnew = pd.Series(elpin_cores)
     xnew = np.arange(start, component.nproc.max() + 1, step)
-    if component.nproc_restriction.shape[0] != 0:
-        xnew = np.array(component.nproc_restriction)
+    # if component.nproc_restriction.shape[0] != 0:
+    #     xnew = np.array(component.nproc_restriction)
     tmp_component = pd.Series([component.sypd.SYPD[component.nproc[component.nproc == n].index[0]]
                                if n in component.nproc.values else np.NaN for n in xnew])
     df = pd.DataFrame({'nproc': xnew, 'real': tmp_component})

@@ -177,7 +177,7 @@ if __name__ == "__main__":
     # solve_ilp(c1_n, c2_n)
 
 
-    from brute_force import brute_force, brute_force_old
+    from brute_force import brute_force
     optimal_result = brute_force(num_components, list_components_class_interpolated, max_nproc, show_plots)
 
     print_result(num_components, list_components_class_interpolated, optimal_result)

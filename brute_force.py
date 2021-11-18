@@ -157,17 +157,15 @@ def brute_force(num_components, list_components_class_interpolated, max_nproc, s
         # TODO: Think the threshold parameter
         mask_same_SYPD = diff_mx < .3
         fitness_same_SYPD = fitness_mx[mask_same_SYPD]
-
         # Filter to match the max_nproc restriction
         mask_max_nproc = nproc_mx <= max_nproc
         final_fitness = fitness_same_SYPD[mask_max_nproc]
 
 
         # TODO: Check this relative method
-
-        filer_for_each_col = pd.Series(c1_n.sypd.SYPD.values * 0.1, index=c1_n.nproc)
+        filer_for_each_col = pd.Series(c1_n.sypd.SYPD.values * .01, index=c1_n.nproc)
         filter_col = diff_mx.le(filer_for_each_col, axis='index')
-        filer_for_each_row = pd.Series(c2_n.sypd.SYPD.values * 0.1, index=c2_n.nproc)
+        filer_for_each_row = pd.Series(c2_n.sypd.SYPD.values * .01, index=c2_n.nproc)
         filter_row = diff_mx.le(filer_for_each_row, axis='columns')
         final_mask = filter_col * filter_row
         fitness_same_SYPD = fitness_mx[final_mask]
@@ -175,8 +173,19 @@ def brute_force(num_components, list_components_class_interpolated, max_nproc, s
         mask_max_nproc = nproc_mx <= max_nproc
         final_fitness = fitness_same_SYPD[mask_max_nproc]
 
-        # diff_mx2 = diff_tmp.apply(lambda col: abs(col.name - col.index) / col.name)
-        # final_rel = diff_mx2[diff_mx2 < 0.03]
+
+        # Filter only the combinations of processes of each component so that NEMO/IFS speed ratio is between 1.1 and 1.2
+        # TODO: Think the IFS/NEMO balance
+        # SYPD difference matrix
+        diff_tmp = pd.DataFrame(index=c1_n.sypd.SYPD, columns=c2_n.sypd.SYPD)
+        diff_mx = diff_tmp.apply(lambda col: col.name / col.index)
+        diff_mx.columns = c2_n.nproc
+        diff_mx.index = c1_n.nproc
+        mask_same_SYPD = (diff_mx < 1.25) * (diff_mx > 1.15)
+        fitness_same_SYPD = fitness_mx[mask_same_SYPD]
+        # Filter to match the max_nproc restriction
+        mask_max_nproc = nproc_mx <= max_nproc
+        final_fitness = fitness_same_SYPD[mask_max_nproc]
 
         # 3D Plot
         if show_plots:

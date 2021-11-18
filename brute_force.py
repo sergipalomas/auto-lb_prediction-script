@@ -101,6 +101,38 @@ def brute_force_old(c1_n, c2_n, max_nproc):
     return optimal_result
 
 
+def plot3d(c1_n, c2_n, fitness_mx, final_fitness, max_nproc):
+    X, Y = np.meshgrid(c1_n.nproc, c2_n.nproc)
+    Z = fitness_mx.to_numpy()
+
+    Z_mk_same_sypd = final_fitness.to_numpy().T
+    mk = X + Y > max_nproc
+    Z_mk_max_nproc = Z.T * mk
+    Z_mk_max_nproc[Z_mk_max_nproc == 0] = np.nan
+    fig, ax = plt.subplots(4, 2, figsize=(8, 20), subplot_kw=dict(projection="3d"))
+    for idx, angle in enumerate(range(181, 362, 30)):
+        i = int(idx / 2)
+        j = int(idx % 2)
+        ax[i, j].plot_surface(X, Y, Z.T, cmap='viridis')
+        ax[i, j].plot_surface(X, Y, Z_mk_same_sypd, color='gold')
+        ax[i, j].plot_surface(X, Y, Z_mk_max_nproc, color='lightcoral', alpha=.5)
+        ax[i, j].set_title("angle=" + str(angle))
+        ax[i, j].set_xlabel(c1_n.name)
+        ax[i, j].set_ylabel(c2_n.name)
+        ax[i, j].set_zlabel('obj_f')
+        ax[i, j].view_init(elev=20., azim=angle)
+
+    ax[3, 1].plot_surface(X, Y, Z.T, cmap='viridis')
+    ax[3, 1].plot_surface(X, Y, Z_mk_same_sypd, color='gold')
+    ax[3, 1].plot_surface(X, Y, Z_mk_max_nproc, color='lightcoral')
+    ax[3, 1].set_title("Objective Function")
+    ax[3, 1].set_xlabel(c1_n.name)
+    ax[3, 1].set_ylabel(c2_n.name)
+    ax[3, 1].set_zlabel('obj_f')
+    ax[3, 1].view_init(elev=270., azim=0.)
+    plt.show()
+
+
 def brute_force(num_components, list_components_class_interpolated, max_nproc, show_plots):
 
     # Sanity check for max_nproc parameter
@@ -120,7 +152,11 @@ def brute_force(num_components, list_components_class_interpolated, max_nproc, s
 
     if num_components == 1:
         c1_n = list_components_class_interpolated[0]
-        rolling_mean = c1_n.fitness.fitness.rolling(10, center=True).mean()
+        mask_max_nproc = c1_n.nproc <= max_nproc
+        if c1_n.nproc_restriction.shape[0] > 0:
+            mask_nproc_restriction = c1_n.nproc.isin(c1_n.nproc_restriction)
+        else: mask_nproc_restriction = True
+        rolling_mean = c1_n.fitness.fitness.rolling(10, center=True).mean() * mask_max_nproc * mask_nproc_restriction
         max_idx = rolling_mean.idxmax()
         opt_nproc = c1_n.fitness.nproc.iloc[max_idx]
 
@@ -153,12 +189,23 @@ def brute_force(num_components, list_components_class_interpolated, max_nproc, s
         nproc_tmp = pd.DataFrame(index=c1_n.nproc, columns=c2_n.nproc)
         nproc_mx = nproc_tmp.apply(lambda col: col.name + col.index)
 
+        # Filter to match the max_nproc restriction
+        mask_max_nproc = nproc_mx <= max_nproc
+        # Filter nproc_restriction per component
+        if c1_n.nproc_restriction.shape[0] > 0:
+            mask_nproc_restriction_c1 = c1_n.nproc.isin(c1_n.nproc_restriction)
+        else:
+            mask_nproc_restriction_c1 = True
+        if c2_n.nproc_restriction.shape[0] > 0:
+            mask_nproc_restriction_c2 = c2_n.nproc.isin(c2_n.nproc_restriction)
+        else:
+            mask_nproc_restriction_c2 = True
+
+
         # Filter only the combinations of processes of each component so that the difference of the SYPD is less than a threshold
         # TODO: Think the threshold parameter
         mask_same_SYPD = diff_mx < .3
         fitness_same_SYPD = fitness_mx[mask_same_SYPD]
-        # Filter to match the max_nproc restriction
-        mask_max_nproc = nproc_mx <= max_nproc
         final_fitness = fitness_same_SYPD[mask_max_nproc]
 
 
@@ -169,8 +216,6 @@ def brute_force(num_components, list_components_class_interpolated, max_nproc, s
         filter_row = diff_mx.le(filer_for_each_row, axis='columns')
         final_mask = filter_col * filter_row
         fitness_same_SYPD = fitness_mx[final_mask]
-        # Filter to match the max_nproc restriction
-        mask_max_nproc = nproc_mx <= max_nproc
         final_fitness = fitness_same_SYPD[mask_max_nproc]
 
 
@@ -181,43 +226,13 @@ def brute_force(num_components, list_components_class_interpolated, max_nproc, s
         diff_mx = diff_tmp.apply(lambda col: col.name / col.index)
         diff_mx.columns = c2_n.nproc
         diff_mx.index = c1_n.nproc
-        mask_same_SYPD = (diff_mx < 1.25) * (diff_mx > 1.15)
+        mask_same_SYPD = (diff_mx < 1.25) * (diff_mx > 1.10)
         fitness_same_SYPD = fitness_mx[mask_same_SYPD]
-        # Filter to match the max_nproc restriction
-        mask_max_nproc = nproc_mx <= max_nproc
         final_fitness = fitness_same_SYPD[mask_max_nproc]
 
         # 3D Plot
         if show_plots:
-            X, Y = np.meshgrid(c1_n.nproc, c2_n.nproc)
-            Z = fitness_mx.to_numpy()
-
-            Z_mk_same_sypd = final_fitness.to_numpy().T
-            mk = X + Y > max_nproc
-            Z_mk_max_nproc = Z.T * mk
-            Z_mk_max_nproc[Z_mk_max_nproc == 0] = np.nan
-            fig, ax = plt.subplots(4, 2, figsize=(8, 20), subplot_kw=dict(projection="3d"))
-            for idx, angle in enumerate(range(181, 362, 30)):
-                i = int(idx / 2)
-                j = int(idx % 2)
-                ax[i, j].plot_surface(X, Y, Z.T, cmap='viridis')
-                ax[i, j].plot_surface(X, Y, Z_mk_same_sypd, color='gold')
-                ax[i, j].plot_surface(X, Y, Z_mk_max_nproc, color='lightcoral', alpha=.5)
-                ax[i, j].set_title("angle=" + str(angle))
-                ax[i, j].set_xlabel(c1_n.name)
-                ax[i, j].set_ylabel(c2_n.name)
-                ax[i, j].set_zlabel('obj_f')
-                ax[i, j].view_init(elev=20., azim=angle)
-
-            ax[3, 1].plot_surface(X, Y, Z.T, cmap='viridis')
-            ax[3, 1].plot_surface(X, Y, Z_mk_same_sypd, color='gold')
-            ax[3, 1].plot_surface(X, Y, Z_mk_max_nproc, color='lightcoral')
-            ax[3, 1].set_title("Objective Function")
-            ax[3, 1].set_xlabel(c1_n.name)
-            ax[3, 1].set_ylabel(c2_n.name)
-            ax[3, 1].set_zlabel('obj_f')
-            ax[3, 1].view_init(elev=270., azim=0.)
-            plt.show()
+            plot3d(c1_n, c2_n, fitness_mx, final_fitness, max_nproc)
 
         # Build the final solution
         c1_sum = final_fitness.sum(axis=1)
@@ -227,6 +242,8 @@ def brute_force(num_components, list_components_class_interpolated, max_nproc, s
         df = pd.DataFrame(index=c1_n.nproc, columns=c2_n.nproc)
         rt = df.apply(lambda col: (c1_sum/count1 + c2_sum[col.name])/count2[col.name])
         rt_final = rt[mask_same_SYPD]
+        rt_final = rt_final.mul(mask_nproc_restriction_c1, axis=1)
+        rt_final = rt_final.mul(mask_nproc_restriction_c2, axis=0)
         nproc_c1 = rt_final.max(axis=1).idxmax()
         nproc_c2 = rt_final.max(axis=0).idxmax()
 

@@ -26,7 +26,7 @@ def check_interpo(num_components, list_components_class, list_components_scalabi
         for m in methods:
             ### Start using interpolated data
             comp1_new = pd.concat({'nproc': df1.nproc, 'SYPD': df1[m]})
-            t1 = Component('IFS_n', comp1_new.nproc, comp1_new.SYPD, c1.nproc_restriction, TTS_r, ETS_r)
+            t1 = Component('IFS_n', comp1_new.nproc, comp1_new.SYPD, c1.nproc_restriction, c1.ts_info, TTS_r, ETS_r)
 
             t1.sypd.plot(x='nproc', y='SYPD', ax=ax1)
             t1.fitness.plot(x='nproc', y='fitness', ax=ax2)
@@ -122,7 +122,7 @@ if __name__ == "__main__":
     config_file = open(sys.argv[1])
     config = yaml.load(config_file, Loader=yaml.FullLoader)
 
-    # Load parameters form the YAML config file
+    # Load global parameters form the YAML config file
     num_components = len(config['Components'])
     TTS_r = config['General']['TTS_ratio']
     ETS_r = 1 - TTS_r
@@ -131,15 +131,16 @@ if __name__ == "__main__":
     max_nproc = config['General']['max_nproc']
     show_plots = config['General']['show_plots']
 
-    elPin_cores = pd.Series([48, 92, 144, 192, 229, 285, 331, 380, 411, 476, 521, 563, 605, 665, 694, 759, 806, 826, 905,
-                             1008, 1012, 1061, 1129, 1164, 1240, 1275, 1427, 1476, 1632, 1650, 1741, 1870])
-
     from component_class import Component
     list_components_scalability_df = list()
     list_components_class = list()
     list_components_interpolated = list()
     list_components_class_interpolated = list()
+
+    # Load component data
     for component in config['Components']:
+        ts_info_df = pd.read_csv(component['timestep_info'])
+        ts_info_df.rename(columns={ts_info_df.columns[0]: "ts_id"}, inplace=True)
         component_df = pd.read_csv(component['File'])
         list_components_scalability_df.append(component_df)
         # Make sure that the nproc restriction is inside the range of scalability provided for that component
@@ -150,7 +151,7 @@ if __name__ == "__main__":
             print("[", *component['nproc_restriction'],"]")
 
         component_class = Component(component['Name'], component_df.nproc, component_df.SYPD,
-                                    component['nproc_restriction'], TTS_r, ETS_r)
+                                    component['nproc_restriction'], ts_info_df, TTS_r, ETS_r)
         list_components_class.append(component_class)
         # Interpolate the data
         df_component_interpolated = interpolate_data(component_class)
@@ -161,18 +162,26 @@ if __name__ == "__main__":
                                            'SYPD': df_component_interpolated[method]})
 
         c1_n = Component(component['Name'], comp_interpolated.nproc, comp_interpolated.SYPD,
-                         component['nproc_restriction'], TTS_r, ETS_r)
+                         component['nproc_restriction'], ts_info_df, TTS_r, ETS_r)
         list_components_class_interpolated.append(c1_n)
 
     if show_plots:
         check_interpo(num_components, list_components_class_interpolated, list_components_interpolated)
 
-    # Run LP model
-    # find_optimal(c1_n, c2_n)
 
-    # from iLP import solve_ilp
-    # solve_ilp(c1_n, c2_n)
+    for component in list_components_class_interpolated:
+        ts = component.ts_info
+        ts_length = ts.drop('ts_id', axis=1).sum(axis=1)
+        irr_ts = ts_length.groupby(np.arange(len(ts_length)) // 4).max()
+        reg_ts = ts_length.groupby(np.arange(len(ts_length)) // 4).max() # TODO: find the regular ts
+        ts.Component.plot(style='b.', label='Regular ts')
+        ts.Component[3::4].plot(style='r.', label='Irregular ts')
+        mean = [ts.Component.mean()] * ts.Component.shape[0]
+        plt.plot(mean, label='mean')
+        plt.title(component.name + " timestep length distribution")
+        plt.show()
 
+        print("by3")
 
     from brute_force import brute_force
     optimal_result = brute_force(num_components, list_components_class_interpolated, max_nproc, show_plots)

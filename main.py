@@ -113,6 +113,20 @@ def print_result(num_components, list_components_class_interpolated, optimal_res
     plt.show()
 
 
+def plot_timesteps_IFS(component):
+    ts = component.ts_info
+    ts_length = ts.drop('ts_id', axis=1).sum(axis=1)
+    irr_ts_idx = ts_length.groupby(np.arange(len(ts_length)) // 4).idxmax()
+    irr_ts = [x for x in ts.Component if x in irr_ts_idx]
+    reg_ts = [x for x in ts.Component if x not in irr_ts_idx]
+    ts.Component.plot(style='b.', label='Regular ts')
+    ts.Component[3::4].plot(style='r.', label='Irregular ts')
+    mean = [ts.Component.mean()] * ts.Component.shape[0]
+    plt.plot(mean, label='mean')
+    plt.title(component.name + " timestep length distribution")
+    plt.legend()
+    plt.show()
+
 if __name__ == "__main__":
 
     if len(sys.argv) != 2:
@@ -151,7 +165,7 @@ if __name__ == "__main__":
             print("[", *component['nproc_restriction'],"]")
 
         component_class = Component(component['Name'], component_df.nproc, component_df.SYPD,
-                                    component['nproc_restriction'], ts_info_df, TTS_r, ETS_r)
+                                    component['nproc_restriction'], ts_info_df, component['timestep_nproc'], TTS_r, ETS_r)
         list_components_class.append(component_class)
         # Interpolate the data
         df_component_interpolated = interpolate_data(component_class)
@@ -162,26 +176,42 @@ if __name__ == "__main__":
                                            'SYPD': df_component_interpolated[method]})
 
         c1_n = Component(component['Name'], comp_interpolated.nproc, comp_interpolated.SYPD,
-                         component['nproc_restriction'], ts_info_df, TTS_r, ETS_r)
+                         component['nproc_restriction'], ts_info_df, component['timestep_nproc'], TTS_r, ETS_r)
         list_components_class_interpolated.append(c1_n)
 
     if show_plots:
         check_interpo(num_components, list_components_class_interpolated, list_components_interpolated)
 
-
+    #Use the information per timestep
     for component in list_components_class_interpolated:
-        ts = component.ts_info
-        ts_length = ts.drop('ts_id', axis=1).sum(axis=1)
-        irr_ts = ts_length.groupby(np.arange(len(ts_length)) // 4).max()
-        reg_ts = ts_length.groupby(np.arange(len(ts_length)) // 4).max() # TODO: find the regular ts
-        ts.Component.plot(style='b.', label='Regular ts')
-        ts.Component[3::4].plot(style='r.', label='Irregular ts')
-        mean = [ts.Component.mean()] * ts.Component.shape[0]
-        plt.plot(mean, label='mean')
-        plt.title(component.name + " timestep length distribution")
-        plt.show()
+        if component.name == "IFS":
+            plot_timesteps_IFS(component)
+    print("What to do")
 
-        print("by3")
+    ifs = list_components_class_interpolated[0]
+    nemo = list_components_class_interpolated[1]
+    ts_ifs = ifs.ts_info
+    ts_nemo = nemo.ts_info
+    ts_nproc_ifs = ifs.ts_nproc
+    ts_nproc_nemo = nemo.ts_nproc
+
+    real_ts_ifs = ts_ifs.Component + ts_ifs.Interpolation + ts_ifs.Sending
+    real_ts_nemo = ts_nemo.Component + ts_nemo.Interpolation + ts_nemo.Sending
+
+    diff_real = real_ts_ifs - real_ts_nemo
+    err = ts_nemo.Waiting.loc[1:].reset_index(drop=True) - diff_real
+
+    waiting_cost = diff_real
+    waiting_cost[diff_real >= 0] = diff_real[diff_real >= 0] * ts_nproc_nemo    # IFS is faster --> NEMO waits
+    waiting_cost[diff_real < 0] = diff_real[diff_real < 0] * ts_nproc_ifs  # NEMO is faster --> IFS waits
+
+    cost = waiting_cost.sum()
+
+    ratio_ifs_nemo = np.mean([real_ts_ifs / real_ts_nemo])
+    fix_nemo_ts_speed = ts_nemo.Component * ratio_ifs_nemo
+    speedup_nemo = nemo.sypd.SYPD / nemo.get_sypd(ts_nproc_nemo)
+
+    print("bye")
 
     from brute_force import brute_force
     optimal_result = brute_force(num_components, list_components_class_interpolated, max_nproc, show_plots)

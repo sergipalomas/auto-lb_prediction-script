@@ -1,107 +1,11 @@
+import time
+
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
 
-def calc_fitness(sypd, chpsy, TTS_r, ETS_r):
-    return TTS_r * sypd + ETS_r * chpsy
-
-
-def obj_f2(nproc, c1_n, c2_n):
-    nproc1 = nproc[0]
-    nproc2 = nproc[1]
-    r = np.vectorize(c1_n.get_fitness)(nproc1) + np.vectorize(c2_n.get_fitness)(nproc2)
-    return r
-
-
-def plot_obj(c1_n, c2_n, max_nproc, opt_result):
-    nproc1_n = np.linspace(c1_n.nproc.min(), c1_n.nproc.max(), 75).round()
-    nproc2_n = np.linspace(c2_n.nproc.min(), c2_n.nproc.max(), 75).round()
-
-    X, Y = np.meshgrid(nproc1_n, nproc2_n)
-    Z = obj_f2([X, Y], c1_n, c2_n)
-
-    # Create a mask for Z when the number of processes exceeds max_numproc
-    mk = X + Y > max_nproc
-    Z_mk = Z * mk
-    Z_mk[Z_mk == 0] = np.nan
-
-    # Prepare optimal point
-    x_opt = [opt_result['nproc_' + c1_n.name], opt_result['nproc_' + c1_n.name]]
-    y_opt = [opt_result['nproc_' + c2_n.name], opt_result['nproc_' + c2_n.name]]
-    z_opt = [Z.min(), opt_result['objective_f']]
-
-    fig, ax = plt.subplots(4, 2, figsize=(8, 20), subplot_kw=dict(projection="3d"))
-    for idx, angle in enumerate(range(181, 362, 30)):
-        i = int(idx / 2)
-        j = int(idx % 2)
-        ax[i, j].plot_surface(X, Y, Z, cmap='viridis', edgecolor='none', alpha=.9)
-        ax[i, j].plot_surface(X, Y, Z_mk, color='lightcoral', edgecolor='none')
-        ax[i, j].set_title("angle=" + str(angle))
-        ax[i, j].set_xlabel(c1_n.name)
-        ax[i, j].set_ylabel(c2_n.name)
-        ax[i, j].set_zlabel('obj_f')
-        ax[i, j].plot(x_opt, y_opt, z_opt, 'r--')
-        ax[i, j].plot(x_opt[1], y_opt[1], z_opt[1], 'ro')
-        ax[i, j].view_init(elev=20., azim=angle)
-
-    ax[3, 1].plot_surface(X, Y, Z, cmap='viridis', edgecolor='none', alpha=.9)
-    ax[3, 1].plot_surface(X, Y, Z_mk, color='lightcoral', edgecolor='none')
-    ax[3, 1].plot(x_opt[1], y_opt[1], z_opt[1], 'ro')
-    ax[3, 1].set_title("vertical")
-    ax[3, 1].set_xlabel(c1_n.name)
-    ax[3, 1].set_ylabel(c2_n.name)
-    ax[3, 1].set_zlabel('obj_f')
-
-    ax[3, 1].view_init(elev=270., azim=0.)
-    plt.show()
-
-
-def brute_force_old(c1_n, c2_n, max_nproc):
-    # Sanity check for max_nproc parameter
-    if max_nproc == 0 or max_nproc > c1_n.nproc.max() + c2_n.nproc.max():
-        max_nproc = c1_n.nproc.max() + c2_n.nproc.max()
-        print("Using a limitation of %i processes at most." % max_nproc)
-    if max_nproc < c1_n.nproc.min() + c2_n.nproc.min():
-        print("Error: max_nproc is less than the minimum resource configuration provided in the CSV files")
-        exit(1)
-    else:
-        print("Using a limitation of %i processes at most." % max_nproc)
-
-    # Sort before matching
-    c1_n_sort = c1_n.sypd.sort_values('SYPD')
-    c2_n_sort = c2_n.sypd.sort_values('SYPD')
-
-    closest = pd.merge_asof(c1_n_sort, c2_n_sort, on='SYPD', direction='nearest')
-    closest.rename(columns={'nproc_x': 'nproc_' + c1_n.name, 'nproc_y': 'nproc_' + c2_n.name}, inplace=True)
-    closest['f1'] = closest.apply(lambda x: c1_n.get_fitness(x['nproc_' + c1_n.name]), axis=1)
-    closest['f2'] = closest.apply(lambda x: c2_n.get_fitness(x['nproc_' + c2_n.name]), axis=1)
-    closest['objective_f'] = closest.f1 + closest.f2
-    if max_nproc > 0:
-        closest = closest[closest['nproc_' + c1_n.name] + closest['nproc_' + c2_n.name] < max_nproc]
-    optimal_result = closest.iloc[closest.objective_f.idxmax()]
-    plt.plot(closest.SYPD, closest.objective_f)
-    plt.plot(optimal_result.SYPD, optimal_result.objective_f, 'o')
-    plt.title("Objective function")
-    plt.show()
-
-    opt = closest.iloc[closest.objective_f.idxmax()]
-
-    optimal_result = {
-        "nproc_" + c1_n.name: opt['nproc_' + c1_n.name],
-        "nproc_" + c2_n.name: opt['nproc_' + c2_n.name],
-        "fitness_" + c1_n.name: opt.f1,
-        "fitness_" + c2_n.name: opt.f2,
-        "objective_f": opt.objective_f,
-        "SYPD": opt.SYPD,
-    }
-
-    plot_obj(c1_n, c2_n, max_nproc, optimal_result)
-
-    return optimal_result
-
-
-def plot3d(c1_n, c2_n, fitness_mx, final_fitness, max_nproc):
+def plot3d_fitness(c1_n, c2_n, fitness_mx, final_fitness, max_nproc):
     X, Y = np.meshgrid(c1_n.nproc, c2_n.nproc)
     Z = fitness_mx.to_numpy()
 
@@ -133,8 +37,51 @@ def plot3d(c1_n, c2_n, fitness_mx, final_fitness, max_nproc):
     plt.show()
 
 
-def brute_force(num_components, list_components_class_interpolated, max_nproc, show_plots):
+# TODO: Check if irr ts cancel waiting time
+def get_cpl_cost(c1, c2, np1, np2):
+    ts_c1 = c1.ts_info
+    ts_c2 = c2.ts_info
+    sp1 = c1.get_speedup(np1)
+    sp2 = c2.get_speedup(np2)
 
+    real_ts_c1 = ts_c1.Component * sp1 + ts_c1.Interpolation + ts_c1.Sending
+    real_ts_c2 = ts_c2.Component * sp2 + ts_c2.Interpolation + ts_c2.Sending
+    diff_real = real_ts_c1 - real_ts_c2
+
+    # If we have irregular ts, we have to check which component is waiting
+    c1_waiting = diff_real[diff_real < 0]  # c2 is faster --> c1 waits
+    c2_waiting = diff_real[diff_real > 0]  # c1 is faster --> c2 waits
+    waiting_cost_c1 = c1_waiting.sum() * np1
+    waiting_cost_c2 = c2_waiting.sum() * np2
+
+    return waiting_cost_c1 + waiting_cost_c2
+
+
+def plot3d_cpl_cost(c1_n, c2_n, cpl_cost):
+    X, Y = np.meshgrid(c1_n.nproc, c2_n.nproc)
+    Z = cpl_cost.to_numpy()
+
+    fig, ax = plt.subplots(4, 2, figsize=(8, 20), subplot_kw=dict(projection="3d"))
+    for idx, angle in enumerate(range(181, 362, 30)):
+        i = int(idx / 2)
+        j = int(idx % 2)
+        ax[i, j].plot_surface(X, Y, Z.T, cmap='viridis')
+        ax[i, j].set_title("angle=" + str(angle))
+        ax[i, j].set_xlabel(c1_n.name)
+        ax[i, j].set_ylabel(c2_n.name)
+        ax[i, j].set_zlabel('cpl_cost')
+        ax[i, j].view_init(elev=20., azim=angle)
+
+    ax[3, 1].plot_surface(X, Y, Z.T, cmap='viridis')
+    ax[3, 1].set_title("Coupling cost")
+    ax[3, 1].set_xlabel(c1_n.name)
+    ax[3, 1].set_ylabel(c2_n.name)
+    ax[3, 1].set_zlabel('cpl_cost')
+    ax[3, 1].view_init(elev=270., azim=0.)
+    plt.show()
+
+
+def brute_force(num_components, list_components_class_interpolated, max_nproc, show_plots):
     # Sanity check for max_nproc parameter
     sum_max = 0
     sum_min = 0
@@ -149,7 +96,6 @@ def brute_force(num_components, list_components_class_interpolated, max_nproc, s
         print("Error: max_nproc is less than the minimum resource configuration provided in the CSV files")
         exit(1)
 
-
     if num_components == 1:
         c1_n = list_components_class_interpolated[0]
         mask_max_nproc = c1_n.nproc <= max_nproc
@@ -162,7 +108,7 @@ def brute_force(num_components, list_components_class_interpolated, max_nproc, s
 
         optimal_result = {
             "nproc_" + c1_n.name: opt_nproc,
-            "fitness_" + c1_n.name: c1_n.get_fitness(opt_nproc),
+            "fitness_" + c1_n.name: c1_n.get_fitness([opt_nproc]),
             "objective_f": c1_n.fitness.fitness.loc[max_idx],
             "SYPD": c1_n.get_sypd(opt_nproc),
         }
@@ -171,6 +117,21 @@ def brute_force(num_components, list_components_class_interpolated, max_nproc, s
         c1_n = list_components_class_interpolated[0]
         c2_n = list_components_class_interpolated[1]
 
+        # TODO: check if ts_info is provided
+        print("Using ts info")
+        t0 = time.time()
+        df_tmp = pd.DataFrame(index=c1_n.nproc, columns=c2_n.nproc)
+        df_cpl_cost = df_tmp.apply(lambda x: get_cpl_cost(c1_n, c2_n, x.index, x.name))
+        sim_ts_start = max(c1_n.ts_info.ts_id.min(), c2_n.ts_info.ts_id.min())
+        sim_ts_end = min(c1_n.ts_info.ts_id.max(), c2_n.ts_info.ts_id.max())
+        sim_time = sim_ts_end - sim_ts_start
+        SY = sim_time / (365*24*3600)
+        df_cpl_cost_ts = df_cpl_cost / SY
+        print("execution time using ts info: ", time.time() - t0)
+
+        if show_plots:
+            plot3d_cpl_cost(c1_n, c2_n, df_cpl_cost)
+
         # SYPD difference matrix
         diff_tmp = pd.DataFrame(index=c1_n.sypd.SYPD, columns=c2_n.sypd.SYPD)
         diff_mx = diff_tmp.apply(lambda col: abs(col.name - col.index))
@@ -178,12 +139,13 @@ def brute_force(num_components, list_components_class_interpolated, max_nproc, s
         diff_mx.index = c1_n.nproc
 
         # Coupled fitness matrix
-        f1 = c1_n.get_fitness2(c1_n.nproc).fitness
-        f2 = c2_n.get_fitness2(c2_n.nproc).fitness
+        f1 = c1_n.get_fitness(c1_n.nproc).fitness
+        f2 = c2_n.get_fitness(c2_n.nproc).fitness
         fitness_mx_tmp = pd.DataFrame(index=f1, columns=f2)
-        fitness_mx = fitness_mx_tmp.apply(lambda col: col.index + col.name)
-        fitness_mx.columns = c2_n.nproc
+        fitness_mx = fitness_mx_tmp.apply(lambda col: col.name + col.index)
         fitness_mx.index = c1_n.nproc
+        fitness_mx.columns = c2_n.nproc
+
 
         # nproc matrix
         nproc_tmp = pd.DataFrame(index=c1_n.nproc, columns=c2_n.nproc)
@@ -232,7 +194,7 @@ def brute_force(num_components, list_components_class_interpolated, max_nproc, s
 
         # 3D Plot
         if show_plots:
-            plot3d(c1_n, c2_n, fitness_mx, final_fitness, max_nproc)
+            plot3d_fitness(c1_n, c2_n, fitness_mx, final_fitness, max_nproc)
 
         # Build the final solution
         c1_sum = final_fitness.sum(axis=1)
@@ -257,8 +219,8 @@ def brute_force(num_components, list_components_class_interpolated, max_nproc, s
         optimal_result = {
             "nproc_" + c1_n.name: nproc_c1,
             "nproc_" + c2_n.name: nproc_c2,
-            "fitness_" + c1_n.name: c1_n.get_fitness(nproc_c1),
-            "fitness_" + c2_n.name: c2_n.get_fitness(nproc_c2),
+            "fitness_" + c1_n.name: c1_n.get_fitness([nproc_c1]),
+            "fitness_" + c2_n.name: c2_n.get_fitness([nproc_c2]),
             "objective_f": final_fitness.loc[nproc_c1, nproc_c2],
             "SYPD": min(c1_n.get_sypd(nproc_c1), c2_n.get_sypd(nproc_c2)),
         }

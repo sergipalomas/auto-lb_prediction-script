@@ -39,6 +39,9 @@ class Component:
     def get_sypd_n(self, nproc):
         return self.sypd_n[self.sypd_n.nproc == nproc].SYPD
 
+    def get_speedup(self, nproc):
+        return self.get_sypd(nproc) / self.get_sypd(self.ts_nproc)
+
     def get_chpsy(self, nproc):
         return self.chpsy[self.nproc == nproc].CHPSY.iloc[0]
 
@@ -46,9 +49,6 @@ class Component:
         return self.chpsy_n[self.chpsy_n.nproc == nproc].CHPSY
 
     def get_fitness(self, nproc):
-        return self.fitness[self.nproc == nproc].fitness.iloc[0]
-
-    def get_fitness2(self, nproc):
         return self.fitness[self.nproc.isin(nproc)]
 
     def compute_fitness(self):
@@ -109,7 +109,7 @@ class Component:
             optimal_nproc = opt_nproc[0]
             optimal_sypd_n = self.get_sypd_n(optimal_nproc)
             optimal_chpsy_n = self.get_chpsy_n(optimal_nproc)
-            optimal_fitness = self.get_fitness(optimal_nproc)
+            optimal_fitness = self.get_fitness([optimal_nproc]).fitness
             ax1.axvline(x=optimal_nproc, ls='-.', c='k', label='Optimal: %i proc' % optimal_nproc, alpha=1.)
             sypd_text = ' %.2f' % optimal_sypd_n
             ax1.plot(optimal_nproc, optimal_sypd_n, 'ko', markersize=5)
@@ -133,7 +133,7 @@ class Component:
         self.fitness.plot(x="nproc", y="fitness", color='tab:blue', ax=ax1, legend=False)
         if len(opt_nproc) == 1:
             optimal_nproc = opt_nproc[0]
-            ax1.plot(optimal_nproc, self.get_fitness(opt_nproc), 'ro', markersize=5)
+            ax1.plot(optimal_nproc, self.get_fitness([opt_nproc]).fitness, 'ro', markersize=5)
             optimal_fitness = self.get_fitness(optimal_nproc)
             fitness_text = ' %.2f' % optimal_fitness
             ax1.text(optimal_nproc, optimal_fitness, fitness_text)

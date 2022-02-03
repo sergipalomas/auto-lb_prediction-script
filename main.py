@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy import interpolate
 import sys, yaml
+import time
 
 
 def check_interpo(num_components, list_components_class, list_components_scalability_df):
@@ -86,7 +87,7 @@ def print_result(num_components, list_components_class_interpolated, optimal_res
         print("\n -------------------------------\n")
         print("Results for component %s:" % component.name)
         print("Number of processes: %i" % opt_nproc)
-        print("Fitness: %.2f" % (component.get_fitness(opt_nproc)))
+        print("Fitness: %.2f" % (component.get_fitness([opt_nproc]).fitness))
         print("CHPSY: %i" % (component.get_chpsy(opt_nproc)))
         print("SYPD: %.2f" % component.get_sypd(opt_nproc))
         component.plot_scalability(opt_nproc)
@@ -105,7 +106,7 @@ def print_result(num_components, list_components_class_interpolated, optimal_res
     for i in range(num_components):
         c1_n = list_components_class_interpolated[i]
         c1_n.fitness.plot(x='nproc', y='fitness', legend=True, ax=ax1)
-        ax1.plot(optimal_result['nproc_' + c1_n.name], c1_n.get_fitness(optimal_result['nproc_' + c1_n.name]), 'o')
+        ax1.plot(optimal_result['nproc_' + c1_n.name], c1_n.get_fitness([optimal_result['nproc_' + c1_n.name]]).fitness, 'o')
         legend.append(c1_n.name)
         legend.append("optimal " + c1_n.name)
     plt.title("Fitness values")
@@ -126,6 +127,15 @@ def plot_timesteps_IFS(component):
     plt.title(component.name + " timestep length distribution")
     plt.legend()
     plt.show()
+
+def plot_timesteps(component):
+    ts = component.ts_info
+    ts.Component.plot(style='b.')
+    mean = [ts.Component.mean()] * ts.Component.shape[0]
+    plt.plot(mean, label='mean')
+    plt.title(component.name + " timestep length distribution")
+    plt.show()
+
 
 if __name__ == "__main__":
 
@@ -186,32 +196,8 @@ if __name__ == "__main__":
     for component in list_components_class_interpolated:
         if component.name == "IFS":
             plot_timesteps_IFS(component)
-    print("What to do")
-
-    ifs = list_components_class_interpolated[0]
-    nemo = list_components_class_interpolated[1]
-    ts_ifs = ifs.ts_info
-    ts_nemo = nemo.ts_info
-    ts_nproc_ifs = ifs.ts_nproc
-    ts_nproc_nemo = nemo.ts_nproc
-
-    real_ts_ifs = ts_ifs.Component + ts_ifs.Interpolation + ts_ifs.Sending
-    real_ts_nemo = ts_nemo.Component + ts_nemo.Interpolation + ts_nemo.Sending
-
-    diff_real = real_ts_ifs - real_ts_nemo
-    err = ts_nemo.Waiting.loc[1:].reset_index(drop=True) - diff_real
-
-    waiting_cost = diff_real
-    waiting_cost[diff_real >= 0] = diff_real[diff_real >= 0] * ts_nproc_nemo    # IFS is faster --> NEMO waits
-    waiting_cost[diff_real < 0] = diff_real[diff_real < 0] * ts_nproc_ifs  # NEMO is faster --> IFS waits
-
-    cost = waiting_cost.sum()
-
-    ratio_ifs_nemo = np.mean([real_ts_ifs / real_ts_nemo])
-    fix_nemo_ts_speed = ts_nemo.Component * ratio_ifs_nemo
-    speedup_nemo = nemo.sypd.SYPD / nemo.get_sypd(ts_nproc_nemo)
-
-    print("bye")
+        else:
+            plot_timesteps(component)
 
     from brute_force import brute_force
     optimal_result = brute_force(num_components, list_components_class_interpolated, max_nproc, show_plots)

@@ -36,14 +36,20 @@ class Component:
     def get_sypd(self, nproc):
         return self.sypd[self.nproc == nproc].SYPD.iloc[0]
 
+    def get_sypd_v(self, nproc):
+        return self.sypd[self.nproc.isin(nproc)].SYPD
+
     def get_sypd_n(self, nproc):
         return self.sypd_n[self.sypd_n.nproc == nproc].SYPD
 
     def get_speedup(self, nproc):
-        return self.get_sypd(nproc) / self.get_sypd(self.ts_nproc)
+        return self.get_sypd_v(nproc) / self.get_sypd(self.ts_nproc)
 
     def get_chpsy(self, nproc):
         return self.chpsy[self.nproc == nproc].CHPSY.iloc[0]
+
+    def get_chpsy2(self, nproc):
+        return self.chpsy[self.nproc.isin(nproc)].CHPSY
 
     def get_chpsy_n(self, nproc):
         return self.chpsy_n[self.chpsy_n.nproc == nproc].CHPSY

@@ -50,7 +50,7 @@ def interpolate_data(component):
     step = 1
     start = component.nproc.min()
     ## Interpolation
-    methods = ['linear', 'slinear', 'quadratic', 'cubic']
+    methods = ['linear', 'slinear', 'quadratic']#, 'cubic']
     legend = methods.copy()
     legend.insert(0, 'real')
 
@@ -62,6 +62,7 @@ def interpolate_data(component):
                                if n in component.nproc.values else np.NaN for n in xnew])
     df = pd.DataFrame({'nproc': xnew, 'real': tmp_component})
     for m in methods:
+        print("Using method: ", m)
         f = interpolate.interp1d(component.nproc, component.sypd.SYPD, kind=m, fill_value="extrapolate")
         ynew = f(xnew).round(2)
         df[m] = pd.DataFrame({m: ynew})
@@ -87,7 +88,7 @@ def print_result(num_components, list_components_class_interpolated, optimal_res
         print("\n -------------------------------\n")
         print("Results for component %s:" % component.name)
         print("Number of processes: %i" % opt_nproc)
-        print("Fitness: %.2f" % (component.get_fitness([opt_nproc]).fitness))
+        print("Fitness: %.2f" % component.get_fitness([opt_nproc]).fitness)
         print("CHPSY: %i" % (component.get_chpsy(opt_nproc)))
         print("SYPD: %.2f" % component.get_sypd(opt_nproc))
         component.plot_scalability(opt_nproc)
@@ -99,7 +100,10 @@ def print_result(num_components, list_components_class_interpolated, optimal_res
     print("Total number of processes: %i" % nproc_acc)
     print("Expected coupled CHPSY: %i" % chpsy_acc)
     print("Expected coupled SYPD: %.2f" % optimal_result['SYPD'])
+    print("Expected coupling cost: %.2f (CHPSY)" % optimal_result['cpl_cost CHPSY'])
+    print("%s/%s speed ratio: %.2f" % (list_components_class_interpolated[0].name, list_components_class_interpolated[1].name, optimal_result['speed_ratio']))
     print("Coupled Objective Function: %.3f" % optimal_result['objective_f'])
+
 
     fig, ax1 = plt.subplots()
     legend = list()
@@ -199,7 +203,7 @@ if __name__ == "__main__":
         else:
             plot_timesteps(component)
 
-    from brute_force import brute_force
-    optimal_result = brute_force(num_components, list_components_class_interpolated, max_nproc, show_plots)
+    from brute_force import brute_force, new_brute_force
+    optimal_result = new_brute_force(num_components, list_components_class_interpolated, max_nproc, show_plots)
 
     print_result(num_components, list_components_class_interpolated, optimal_result)

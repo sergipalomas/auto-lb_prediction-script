@@ -95,6 +95,30 @@ def plot3d_cpl_cost(c1_n, c2_n, cpl_cost):
     plt.show()
 
 
+def plot_timesteps_IFS(component):
+    ts = component.ts_info
+    ts_length = ts.drop('ts_id', axis=1).sum(axis=1)
+    irr_ts_idx = ts_length.groupby(np.arange(len(ts_length)) // 4).idxmax()
+    irr_ts = [x for x in ts.Component if x in irr_ts_idx]
+    reg_ts = [x for x in ts.Component if x not in irr_ts_idx]
+    ts.Component.plot(style='b.', label='Regular ts')
+    ts.Component[3::4].plot(style='r.', label='Irregular ts')
+    mean = [ts.Component.mean()] * ts.Component.shape[0]
+    plt.plot(mean, label='mean')
+    plt.title(component.name + " timestep length distribution")
+    plt.legend()
+    plt.show()
+
+
+def plot_timesteps(component):
+    ts = component.ts_info
+    ts.Component.plot(style='b.')
+    mean = [ts.Component.mean()] * ts.Component.shape[0]
+    plt.plot(mean, label='mean')
+    plt.title(component.name + " timestep length distribution")
+    plt.show()
+
+
 def brute_force(num_components, list_components_class_interpolated, max_nproc, show_plots):
     # Sanity check for max_nproc parameter
     sum_max = 0
@@ -263,7 +287,6 @@ def new_brute_force(num_components, list_components_class_interpolated, max_npro
         print("Error: max_nproc is less than the minimum resource configuration provided in the CSV files")
         exit(1)
 
-
     if num_components == 2:
 
         c1_n = list_components_class_interpolated[0]
@@ -272,6 +295,10 @@ def new_brute_force(num_components, list_components_class_interpolated, max_npro
         df_nproc_tmp = pd.DataFrame(index=c1_n.nproc, columns=c2_n.nproc)
         df_sypd_tmp = pd.DataFrame(index=c1_n.sypd.SYPD, columns=c2_n.sypd.SYPD)
         df_chpsy_tmp = pd.DataFrame(index=c1_n.chpsy.CHPSY, columns=c2_n.chpsy.CHPSY)
+
+        # Maks to match the max_nproc restriction
+        df_nproc = df_nproc_tmp.apply(lambda col: col.name + col.index)
+        mask_max_nproc = df_nproc <= max_nproc
 
         ### TTS matrix
         df_TTS = df_sypd_tmp.apply(lambda col: np.minimum(col.index, col.name))
@@ -286,12 +313,32 @@ def new_brute_force(num_components, list_components_class_interpolated, max_npro
         # CHPSY matrix
         print("Using ts info")
         t0 = time.time()
-        df_cpl_cost_ch = df_nproc_tmp.apply(lambda x: get_cpl_cost(c1_n, c2_n, x.index, x.name))
-        sim_ts_start = max(c1_n.ts_info.ts_id.min(), c2_n.ts_info.ts_id.min())
-        sim_ts_end = min(c1_n.ts_info.ts_id.max(), c2_n.ts_info.ts_id.max())
-        sim_time = sim_ts_end - sim_ts_start
-        SY = sim_time / (365 * 24 * 3600)
-        df_cpl_cost_chpsy = df_cpl_cost_ch / SY
+        if len(c1_n.ts_info != 0) and len(c2_n.ts_info != 0):
+            # Use information per timestep to find best combination of processes
+            print("Using timestep lengths information")
+            if show_plots:
+                plot_timesteps_IFS(c1_n)
+                plot_timesteps(c2_n)
+
+            df_cpl_cost_ch = df_nproc_tmp.apply(lambda x: get_cpl_cost(c1_n, c2_n, x.index, x.name))
+            sim_ts_start = max(c1_n.ts_info.ts_id.min(), c2_n.ts_info.ts_id.min())
+            sim_ts_end = min(c1_n.ts_info.ts_id.max(), c2_n.ts_info.ts_id.max())
+            sim_time = sim_ts_end - sim_ts_start
+            SY = sim_time / (365 * 24 * 3600)
+            df_cpl_cost_chpsy = df_cpl_cost_ch / SY
+
+        else:
+            # Assume regular timestep lengths
+            print("No information per timestep available. Assuming regular timestep lengths")
+            ratio = df_sypd_tmp.apply(lambda col: col.index / col.name)
+            c1_waits = 1 - 1 / ratio[ratio > 1]
+            c2_waits = 1 - ratio[ratio < 1]
+            c1_waits_cost = c1_waits.mul(c1_n.chpsy.CHPSY.values, axis=0)
+            c2_waits_cost = c2_waits.mul(c2_n.chpsy.CHPSY.values, axis=1)
+            df_cpl_cost_chpsy = c1_waits_cost.add(c2_waits_cost, fill_value=0)
+            df_cpl_cost_chpsy.index = c1_n.nproc
+            df_cpl_cost_chpsy.columns = c2_n.nproc
+
         print("execution time using ts info: ", time.time() - t0)
 
         if show_plots:
@@ -305,24 +352,10 @@ def new_brute_force(num_components, list_components_class_interpolated, max_npro
         f_ETS = 1 - minmax_df_normalization(df_ETS)  # Note that we want to minimize the cost. Therefore,
                                                      # I use 1 - cost to have a maximization problem
 
+        # Objective Function
         final_fitness = c1_n.TTS_r * f_TTS + c1_n.ETS_r * f_ETS
-
-        # nproc matrix
-        # TODO: Do this before to save up computation
-        nproc_tmp = pd.DataFrame(index=c1_n.nproc, columns=c2_n.nproc)
-        nproc_mx = nproc_tmp.apply(lambda col: col.name + col.index)
-
-        # Filter to match the max_nproc restriction
-        mask_max_nproc = nproc_mx <= max_nproc
-        # Filter nproc_restriction per component
-        if c1_n.nproc_restriction.shape[0] > 0:
-            mask_nproc_restriction_c1 = c1_n.nproc.isin(c1_n.nproc_restriction)
-        else:
-            mask_nproc_restriction_c1 = True
-        if c2_n.nproc_restriction.shape[0] > 0:
-            mask_nproc_restriction_c2 = c2_n.nproc.isin(c2_n.nproc_restriction)
-        else:
-            mask_nproc_restriction_c2 = True
+        # Filter by max_nproc allowed
+        final_fitness = final_fitness[mask_max_nproc]
 
 
         # Build the final solution

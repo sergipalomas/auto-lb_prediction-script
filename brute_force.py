@@ -357,7 +357,7 @@ def new_brute_force(num_components, list_components_class_interpolated, max_npro
             "fitness_" + c2_n.name: c2_n.get_fitness([nproc_c2]),
             "objective_f": final_fitness.loc[nproc_c1, nproc_c2],
             "SYPD": min(c1_n.get_sypd(nproc_c1), c2_n.get_sypd(nproc_c2)),
-            "cpl_cost CHPSY": df_cpl_cost_chpsy.loc[nproc_c1, nproc_c2],
+            "cpl_cost": df_cpl_cost_chpsy.loc[nproc_c1, nproc_c2],
             "speed_ratio": c1_n.get_sypd(nproc_c1)/c2_n.get_sypd(nproc_c2)
         }
 

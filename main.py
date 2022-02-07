@@ -55,14 +55,16 @@ def interpolate_data(component):
     legend.insert(0, 'real')
 
     ## Interpolation
-    xnew = np.arange(start, component.nproc.max() + 1, step)
+    if len(component.nproc_restriction) != 0:
+        xnew = component.nproc_restriction
+    else:
+        xnew = np.arange(start, component.nproc.max() + 1, step)
     # if component.nproc_restriction.shape[0] != 0:
     #     xnew = np.array(component.nproc_restriction)
     tmp_component = pd.Series([component.sypd.SYPD[component.nproc[component.nproc == n].index[0]]
                                if n in component.nproc.values else np.NaN for n in xnew])
     df = pd.DataFrame({'nproc': xnew, 'real': tmp_component})
     for m in methods:
-        print("Using method: ", m)
         f = interpolate.interp1d(component.nproc, component.sypd.SYPD, kind=m, fill_value="extrapolate")
         ynew = f(xnew).round(2)
         df[m] = pd.DataFrame({m: ynew})
@@ -100,7 +102,7 @@ def print_result(num_components, list_components_class_interpolated, optimal_res
     print("Total number of processes: %i" % nproc_acc)
     print("Expected coupled CHPSY: %i" % chpsy_acc)
     print("Expected coupled SYPD: %.2f" % optimal_result['SYPD'])
-    print("Expected coupling cost: %.2f (CHPSY)" % optimal_result['cpl_cost CHPSY'])
+    print("Expected coupling cost: %.2f %%, %.2f (CHPSY)" % (optimal_result['cpl_cost']*100 / chpsy_acc), optimal_result['cpl_cost'])
     print("%s/%s speed ratio: %.2f" % (list_components_class_interpolated[0].name, list_components_class_interpolated[1].name, optimal_result['speed_ratio']))
     print("Coupled Objective Function: %.3f" % optimal_result['objective_f'])
 
@@ -114,7 +116,7 @@ def print_result(num_components, list_components_class_interpolated, optimal_res
         legend.append(c1_n.name)
         legend.append("optimal " + c1_n.name)
     plt.title("Fitness values")
-    plt.legend(legend, loc=(0, 1.05))
+    plt.legend(legend)
     plt.show()
 
 
@@ -183,9 +185,10 @@ if __name__ == "__main__":
         list_components_class.append(component_class)
         # Interpolate the data
         df_component_interpolated = interpolate_data(component_class)
+        #df_component_interpolated = df_component_interpolated[df_component_interpolated.nproc.isin(component_class.nproc_restriction)]
         list_components_interpolated.append(df_component_interpolated)
 
-    # TODO: Select one of the methods
+        # TODO: Select one of the methods
         comp_interpolated = pd.DataFrame({'nproc': df_component_interpolated.nproc,
                                            'SYPD': df_component_interpolated[method]})
 

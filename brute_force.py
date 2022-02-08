@@ -349,39 +349,28 @@ def new_brute_force(num_components, list_components_class_interpolated, max_npro
 
         # Min/Max normalization
         f_TTS = minmax_df_normalization(df_TTS)
-        f_ETS = 1 - minmax_df_normalization(df_ETS)  # Note that we want to minimize the cost. Therefore,
-                                                     # I use 1 - cost to have a maximization problem
+        # Note that we want to minimize the cost. Therefore, I use 1 - cost to have a maximization problem
+        f_ETS = 1 - minmax_df_normalization(df_ETS)
 
         # Objective Function
         final_fitness = c1_n.TTS_r * f_TTS + c1_n.ETS_r * f_ETS
         # Filter by max_nproc allowed
         final_fitness = final_fitness[mask_max_nproc]
 
+        # Create the final solution by averaging each result with its closest 4 neighbours (left, right, up, down)
+        # I don't use this if there is a nproc_restriction. As the jump between consecutive nprocs can be too big and
+        # averaging would be unfair.
+        if len(c1_n.nproc_restriction) == 0 and len(c2_n.nproc_restriction) == 0:
+            row_rolling_mean = final_fitness.rolling(3, center=True, min_periods=2, axis=1).mean()
+            col_rolling_mean = final_fitness.rolling(3, center=True, min_periods=2, axis=0).mean()
+            f = (row_rolling_mean + col_rolling_mean) / 2
+            nproc_c1 = f.max(axis=1).idxmax()
+            nproc_c2 = f.max(axis=0).idxmax()
 
-        # Build the final solution
-        # TODO: I don't like this. Find a way to avoid falling into a singularity
-        # c1_sum = final_fitness.sum(axis=1)
-        # c2_sum = final_fitness.sum(axis=0)
-        # count1 = final_fitness.count(axis=1)
-        # count2 = final_fitness.count(axis=0)
-        # df = pd.DataFrame(index=c1_n.nproc, columns=c2_n.nproc)
-        # rt = df.apply(lambda col: (c1_sum/count1 + c2_sum[col.name])/count2[col.name])
-        # rt_final = rt
-        # rt_final = rt_final.mul(mask_nproc_restriction_c1, axis=1)
-        # rt_final = rt_final.mul(mask_nproc_restriction_c2, axis=0)
-        # nproc_c1 = rt_final.max(axis=1).idxmax()
-        # nproc_c2 = rt_final.max(axis=0).idxmax()
-
-        nproc_c1 = final_fitness.max(axis=1).idxmax()
-        nproc_c2 = final_fitness.max(axis=0).idxmax()
-
-        # Sanity check: In case the combination of component processes does not map into a viable solution using max of
-        # means, just select the maximum of the matrix
-        if pd.isna(final_fitness.loc[nproc_c1, nproc_c2]):
-            print("Singularity Error. Using the maximum of the fitness matrix")
+        # Just pick up the maximum from the table.
+        else:
             nproc_c1 = final_fitness.max(axis=1).idxmax()
             nproc_c2 = final_fitness.max(axis=0).idxmax()
-
 
         optimal_result = {
             "nproc_" + c1_n.name: nproc_c1,

@@ -59,7 +59,7 @@ def interpolate_data(component):
         xnew = component.nproc_restriction
     else:
         xnew = np.arange(nproc_start, nproc_end, step)
-    if len(component.ts_info) != 0:
+    if len(component.ts_info) != 0 and component.ts_nproc not in xnew.values:
         xnew = np.append(xnew, component.ts_nproc)
         xnew.sort()
     # if component.nproc_restriction.shape[0] != 0:
@@ -174,7 +174,6 @@ if __name__ == "__main__":
         list_components_class.append(component_class)
         # Interpolate the data
         df_component_interpolated = interpolate_data(component_class)
-        #df_component_interpolated = df_component_interpolated[df_component_interpolated.nproc.isin(component_class.nproc_restriction)]
         list_components_interpolated.append(df_component_interpolated)
 
         # TODO: Select one of the methods

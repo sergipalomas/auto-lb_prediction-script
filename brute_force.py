@@ -287,7 +287,25 @@ def new_brute_force(num_components, list_components_class_interpolated, max_npro
         print("Error: max_nproc is less than the minimum resource configuration provided in the CSV files")
         exit(1)
 
-    if num_components == 2:
+    if num_components == 1:
+        c1_n = list_components_class_interpolated[0]
+        mask_max_nproc = c1_n.nproc <= max_nproc
+        if c1_n.nproc_restriction.shape[0] > 0:
+            mask_nproc_restriction = c1_n.nproc.isin(c1_n.nproc_restriction)
+        else:
+            mask_nproc_restriction = True
+        rolling_mean = c1_n.fitness.fitness.rolling(10, center=True).mean() * mask_max_nproc * mask_nproc_restriction
+        max_idx = rolling_mean.idxmax()
+        opt_nproc = c1_n.fitness.nproc.iloc[max_idx]
+
+        optimal_result = {
+            "nproc_" + c1_n.name: opt_nproc,
+            "fitness_" + c1_n.name: c1_n.get_fitness([opt_nproc]),
+            "objective_f": c1_n.fitness.fitness.loc[max_idx],
+            "SYPD": c1_n.get_sypd(opt_nproc),
+        }
+
+    elif num_components == 2:
 
         c1_n = list_components_class_interpolated[0]
         c2_n = list_components_class_interpolated[1]
@@ -342,7 +360,7 @@ def new_brute_force(num_components, list_components_class_interpolated, max_npro
         print("execution time using ts info: ", time.time() - t0)
 
         if show_plots:
-            plot3d_cpl_cost(c1_n, c2_n, df_cpl_cost_ch)
+            plot3d_cpl_cost(c1_n, c2_n, df_cpl_cost_chpsy)
 
         # Add cpl_cost chpsy overhead to ETS matrix
         df_ETS = df_chpsy.add(abs(df_cpl_cost_chpsy))

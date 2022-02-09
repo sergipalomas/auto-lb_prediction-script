@@ -1,16 +1,16 @@
 ---
 Components:
-- Name: IFS
-  File: data/IFS_SR_Reduced_scalability_ece3.csv
-  nproc_restriction: #[48, 96, 144, 192, 240, 288, 336, 384, 432, 480, 528, 576, 624,672, 720, 768, 816, 864, 912, 960, 1008 ]
-  timestep_info: data/ts_data/ATMIFS_ts.csv
+- name: IFS
+  file: data/IFS_SR_Reduced_scalability_ece3.csv
+  nproc_restriction: [144, 240, 336, 432, 528, 624, 720]
+  timestep_info: data/ts_data/ATMIFS_ts_3m.csv
   timestep_nproc: 480
   # per node restriction: [48, 96, 144, 192, 240, 288, 336, 384, 432, 480, 528, 576, 624,672, 720, 768, 816, 864,
   #                       912, 960, 1008 ]
-- Name: NEMO
-  File: data/NEMO_SR_Reduced_scalability_ece3.csv
-  nproc_restriction: #[48, 92, 144, 192, 229, 285, 331, 380, 411, 476, 521, 563, 605, 665, 694, 759, 806, 826, 905, 1008, 1012, 1061, 1129, 1164, 1240, 1275, 1427, 1476, 1632, 1650, 1741, 1870]
-  timestep_info: data/ts_data/oceanx_ts.csv
+- name: NEMO
+  file: data/NEMO_SR_Reduced_scalability_ece3.csv
+  nproc_restriction: [48, 92, 144, 229, 285, 331]
+  timestep_info: data/ts_data/oceanx_ts_3m.csv
   timestep_nproc: 229
   #  elPiN NEMO SR: [48, 92, 144, 192, 229, 285, 331, 380, 411, 476, 521, 563, 605, 665, 694, 759, 806, 826, 905, 1008,
   #  1012, 1061, 1129, 1164, 1240, 1275, 1427, 1476, 1632, 1650, 1741, 1870]
@@ -22,8 +22,8 @@ Components:
 #  nproc_restriction:
 
 General:
-  max_nproc: 3000
+  max_nproc: 2000
   TTS_ratio: .5
   interpo_method: quadratic
-  show_plots: False
+  show_plots: True
   node_size: 48

@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy import interpolate
 import sys, yaml
+from mpl_toolkits.mplot3d import Axes3D
 
 
 def check_interpo(num_components, list_components_class, list_components_scalability_df):

@@ -57,14 +57,12 @@ def interpolate_data(component):
 
     ## Interpolation
     if len(component.nproc_restriction) != 0:
-        xnew = component.nproc_restriction
+        xnew = component.nproc_restriction.values
     else:
         xnew = np.arange(nproc_start, nproc_end, step)
-    if len(component.ts_info) != 0 and component.ts_nproc not in xnew.values:
+    if len(component.ts_info) != 0 and component.ts_nproc not in xnew:
         xnew = np.append(xnew, component.ts_nproc)
         xnew.sort()
-    # if component.nproc_restriction.shape[0] != 0:
-    #     xnew = np.array(component.nproc_restriction)
     tmp_component = pd.Series([component.sypd.SYPD[component.nproc[component.nproc == n].index[0]]
                                if n in component.nproc.values else np.NaN for n in xnew])
     df = pd.DataFrame({'nproc': xnew, 'real': tmp_component})

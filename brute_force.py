@@ -54,18 +54,23 @@ def get_cpl_cost(c1, c2, np1, np2):
     sp1 = c1.get_speedup(np1)
     sp2 = c2.get_speedup([np2]).values
 
+    # Use the speedup from the scalability curve to guess the ts_length for different nprocs than the provided in ts_info
+    # Note that only ts.Component is rescaled. ts.Interpolation and ts.Sending are constant.
     df_tmp = pd.DataFrame(index=ts_c1.Component, columns=sp1)
     df_real_ts_c1 = df_tmp.apply(lambda x: x.index / x.name + ts_c1.Interpolation + ts_c1.Sending)
     real_ts_c2 = ts_c2.Component / sp2 + ts_c2.Interpolation + ts_c2.Sending
 
+    # Compute the diff (waiting time) between all pair of nprocs per timestep
     diff_real = df_real_ts_c1.sub(real_ts_c2, axis=0)
 
     # If we have irregular ts, we have to check which component is waiting
-    c1_waiting = diff_real[diff_real < 0]  # c2 is faster --> c1 waits
-    c2_waiting = diff_real[diff_real > 0]  # c1 is faster --> c2 waits
-    waiting_cost_c1 = c1_waiting.sum()/3600 * np1
-    waiting_cost_c2 = c2_waiting.sum()/3600 * np2
-    total_cpl_cost = waiting_cost_c1 + waiting_cost_c2
+    c1_waiting = abs(diff_real[diff_real < 0])  # c2 is faster --> c1 waits
+    c2_waiting = diff_real[diff_real > 0]       # c1 is faster --> c2 waits
+    c1_cpl_time = c1_waiting.fillna(0).add(ts_c1.Interpolation + ts_c1.Sending, axis=0)
+    c2_cpl_time = c2_waiting.fillna(0).add(ts_c2.Interpolation + ts_c2.Sending, axis=0)
+    c1_cpl_cost = c1_cpl_time.sum()/3600 * np1
+    c2_cpl_cost = c2_cpl_time.sum()/3600 * np2
+    total_cpl_cost = c1_cpl_cost + c2_cpl_cost
     total_cpl_cost.index = np1
 
     return total_cpl_cost
@@ -364,6 +369,7 @@ def new_brute_force(num_components, list_components_class_interpolated, max_npro
 
         # Add cpl_cost chpsy overhead to ETS matrix
         df_ETS = df_chpsy.add(abs(df_cpl_cost_chpsy))
+        cpl_cost = df_cpl_cost_chpsy/df_ETS
 
         # Min/Max normalization
         f_TTS = minmax_df_normalization(df_TTS)
@@ -397,7 +403,8 @@ def new_brute_force(num_components, list_components_class_interpolated, max_npro
             "fitness_" + c2_n.name: c2_n.get_fitness([nproc_c2]),
             "objective_f": final_fitness.loc[nproc_c1, nproc_c2],
             "SYPD": min(c1_n.get_sypd(nproc_c1), c2_n.get_sypd(nproc_c2)),
-            "cpl_cost": abs(df_cpl_cost_chpsy.loc[nproc_c1, nproc_c2]),
+            "cpl_cost": cpl_cost.loc[nproc_c1, nproc_c2],
+            "cpl_chpsy": df_cpl_cost_chpsy.loc[nproc_c1, nproc_c2],
             "speed_ratio": c1_n.get_sypd(nproc_c1)/c2_n.get_sypd(nproc_c2)
         }
 

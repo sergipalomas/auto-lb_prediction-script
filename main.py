@@ -2,7 +2,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy import interpolate
-import sys, yaml
+import sys
+import yaml
 from mpl_toolkits.mplot3d import Axes3D
 
 
@@ -100,12 +101,15 @@ def print_result(num_components, list_components_class_interpolated, optimal_res
         nproc_acc += opt_nproc
         chpsy_acc += component.get_chpsy(opt_nproc)
 
+    # We have to add the cpl_cost to the CHPSY
+    chpsy_acc += optimal_result['cpl_chpsy']
+
     if num_components > 1:
         print("\n -------------------------------\n")
         print("Total number of processes: %i" % nproc_acc)
         print("Expected coupled CHPSY: %i" % chpsy_acc)
         print("Expected coupled SYPD: %.2f" % optimal_result['SYPD'])
-        print("Expected coupling cost: %.2f %%, %.2f (CHPSY)" % ((optimal_result['cpl_cost']*100 / chpsy_acc), optimal_result['cpl_cost']))
+        print("Expected coupling cost: %.2f %%, %.2f (CHPSY)" % (optimal_result['cpl_cost']*100, optimal_result['cpl_chpsy']))
         print("%s/%s speed ratio: %.2f" % (list_components_class_interpolated[0].name, list_components_class_interpolated[1].name, optimal_result['speed_ratio']))
         print("Coupled Objective Function: %.3f" % optimal_result['objective_f'])
 

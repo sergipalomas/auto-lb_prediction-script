@@ -75,6 +75,33 @@ def get_cpl_cost(c1, c2, np1, np2):
 
     return total_cpl_cost
 
+def get_cpl_sypd(c1, c2, np1, np2):
+    ts_c1 = c1.ts_info
+    ts_c2 = c2.ts_info
+    sp1 = c1.get_speedup(np1)
+    sp2 = c2.get_speedup([np2]).values
+
+    # Use the speedup from the scalability curve to guess the ts_length for different nprocs than the provided in ts_info
+    # Note that only ts.Component is rescaled. ts.Interpolation and ts.Sending are constant.
+    df_tmp = pd.DataFrame(index=ts_c1.Component, columns=sp1)
+    df_real_ts_c1 = df_tmp.apply(lambda x: x.index / x.name + ts_c1.Interpolation + ts_c1.Sending)
+    real_ts_c2 = ts_c2.Component / sp2 + ts_c2.Interpolation + ts_c2.Sending
+
+    # Compute the diff (waiting time) between all pair of nprocs per timestep
+    diff_real = df_real_ts_c1.sub(real_ts_c2, axis=0).shift(1)
+    diff_real.fillna(diff_real.mean())
+
+    # If we have irregular ts, we have to check which component is waiting
+    c1_waiting = abs(diff_real[diff_real < 0])  # c2 is faster --> c1 waits
+    c2_waiting = diff_real[diff_real > 0]       # c1 is faster --> c2 waits
+    c1_sim_time = df_real_ts_c1.add(c1_waiting, fill_value=0).sum()
+    c2_sim_time = c2_waiting.fillna(0).add(real_ts_c2, axis=0).sum()
+    if not c1_sim_time.equals(c2_sim_time):
+        warnings.warn("Something went wrong when computing the coupled SYPD!")
+
+    c1_sim_time.index = np1
+    return c1_sim_time
+
 
 def plot3d_cpl_cost(c1_n, c2_n, cpl_cost):
     X, Y = np.meshgrid(c1_n.nproc, c2_n.nproc)
@@ -323,11 +350,6 @@ def new_brute_force(num_components, list_components_class_interpolated, max_npro
         df_nproc = df_nproc_tmp.apply(lambda col: col.name + col.index)
         mask_max_nproc = df_nproc <= max_nproc
 
-        ### TTS matrix
-        df_TTS = df_sypd_tmp.apply(lambda col: np.minimum(col.index, col.name))
-        df_TTS.index = c1_n.nproc
-        df_TTS.columns = c2_n.nproc
-
         ### ETS matrix
         df_chpsy = df_chpsy_tmp.apply(lambda x: x.index + x.name)
         df_chpsy.index = c1_n.nproc
@@ -343,12 +365,22 @@ def new_brute_force(num_components, list_components_class_interpolated, max_npro
                 plot_timesteps_IFS(c1_n)
                 plot_timesteps(c2_n)
 
-            df_cpl_cost_ch = df_nproc_tmp.apply(lambda x: get_cpl_cost(c1_n, c2_n, x.index, x.name))
-            sim_ts_start = max(c1_n.ts_info.ts_id.min(), c2_n.ts_info.ts_id.min())
-            sim_ts_end = min(c1_n.ts_info.ts_id.max(), c2_n.ts_info.ts_id.max())
+            # Get some information from the ts_info
+            sim_ts_start = min(c1_n.ts_info.ts_id.min(), c2_n.ts_info.ts_id.min())
+            sim_ts_end = max(c1_n.ts_info.ts_id.max(), c2_n.ts_info.ts_id.max())
             sim_time = sim_ts_end - sim_ts_start
             SY = sim_time / (365 * 24 * 3600)
+
+            # cpl_cost CHPSY
+            df_cpl_cost_ch = df_nproc_tmp.apply(lambda x: get_cpl_cost(c1_n, c2_n, x.index, x.name))
             df_cpl_cost_chpsy = df_cpl_cost_ch / SY
+
+            # cpl SYPD
+            df_cpl_exe_time = df_nproc_tmp.apply(lambda x: get_cpl_sypd(c1_n, c2_n, x.index, x.name))
+            df_TTS = sim_time/df_cpl_exe_time/365
+
+            # cpl CHSY
+            df_ETS = df_nproc * 24 / df_TTS
 
         else:
             # Assume regular timestep lengths
@@ -362,14 +394,20 @@ def new_brute_force(num_components, list_components_class_interpolated, max_npro
             df_cpl_cost_chpsy.index = c1_n.nproc
             df_cpl_cost_chpsy.columns = c2_n.nproc
 
+            ### TTS matrix
+            df_TTS = df_sypd_tmp.apply(lambda col: np.minimum(col.index, col.name))
+            df_TTS.index = c1_n.nproc
+            df_TTS.columns = c2_n.nproc
+
+            ### ETS matrix
+            # Add cpl_cost chpsy overhead to ETS matrix
+            df_ETS = df_chpsy.add(abs(df_cpl_cost_chpsy))
+            cpl_cost = df_cpl_cost_chpsy / df_ETS
+
         print("execution time using ts info: ", time.time() - t0)
 
         if show_plots:
             plot3d_cpl_cost(c1_n, c2_n, df_cpl_cost_chpsy)
-
-        # Add cpl_cost chpsy overhead to ETS matrix
-        df_ETS = df_chpsy.add(abs(df_cpl_cost_chpsy))
-        cpl_cost = df_cpl_cost_chpsy/df_ETS
 
         # Min/Max normalization
         f_TTS = minmax_df_normalization(df_TTS)
@@ -396,15 +434,16 @@ def new_brute_force(num_components, list_components_class_interpolated, max_npro
             nproc_c1 = final_fitness.max(axis=1).idxmax()
             nproc_c2 = final_fitness.max(axis=0).idxmax()
 
+        # TODO: Fix cpl cost and chpsy output
         optimal_result = {
             "nproc_" + c1_n.name: nproc_c1,
             "nproc_" + c2_n.name: nproc_c2,
             "fitness_" + c1_n.name: c1_n.get_fitness([nproc_c1]),
             "fitness_" + c2_n.name: c2_n.get_fitness([nproc_c2]),
             "objective_f": final_fitness.loc[nproc_c1, nproc_c2],
-            "SYPD": min(c1_n.get_sypd(nproc_c1), c2_n.get_sypd(nproc_c2)),
-            "cpl_cost": cpl_cost.loc[nproc_c1, nproc_c2],
-            "cpl_chpsy": df_cpl_cost_chpsy.loc[nproc_c1, nproc_c2],
+            "SYPD": df_TTS.loc[nproc_c1, nproc_c2],
+            "cpl_cost": 10, #cpl_cost.loc[nproc_c1, nproc_c2],
+            "cpl_chpsy": 10, #df_cpl_cost_chpsy.loc[nproc_c1, nproc_c2],
             "speed_ratio": c1_n.get_sypd(nproc_c1)/c2_n.get_sypd(nproc_c2)
         }
 

@@ -47,8 +47,7 @@ def check_interpo(num_components, list_components_class, list_components_scalabi
 
 
 
-def interpolate_data(component):
-    step = 24  # TODO: This should be using the node_size
+def interpolate_data(component, nproc_step):
     nproc_start = component.nproc.min()
     nproc_end = component.nproc.max() + 1
     ## Interpolation
@@ -60,7 +59,7 @@ def interpolate_data(component):
     if len(component.nproc_restriction) != 0:
         xnew = component.nproc_restriction.values
     else:
-        xnew = np.arange(nproc_start, nproc_end, step)
+        xnew = np.arange(nproc_start, nproc_end, nproc_step)
     if len(component.ts_info) != 0 and component.ts_nproc not in xnew:
         xnew = np.append(xnew, component.ts_nproc)
         xnew.sort()
@@ -117,14 +116,20 @@ def print_result(num_components, list_components_class_interpolated, optimal_res
     fig, ax1 = plt.subplots()
     legend = list()
     for i in range(num_components):
-        c1_n = list_components_class_interpolated[i]
-        c1_n.fitness.plot(x='nproc', y='fitness', legend=True, ax=ax1)
-        ax1.plot(optimal_result['nproc_' + c1_n.name], c1_n.get_fitness([optimal_result['nproc_' + c1_n.name]]).fitness, 'o')
-        legend.append(c1_n.name)
-        legend.append("optimal " + c1_n.name)
+        c = list_components_class_interpolated[i]
+        c.fitness.plot(x='nproc', y='fitness', legend=True, ax=ax1)
+        ax1.plot(optimal_result['nproc_' + c.name], c.get_fitness([optimal_result['nproc_' + c.name]]).fitness, 'o')
+        legend.append(c.name)
+        legend.append("optimal " + c.name)
     plt.title("Fitness values")
     plt.legend(legend)
     plt.show()
+
+    # Save top configurations as txt file
+    out_file = "new_nprocs.txt"
+    f = open(out_file, "w")
+    f.write(list_components_class_interpolated[0].name + '_nprocs=( ' + ''.join('%s ' % x[0] for x in optimal_result['top_configurations']) + ')\n')
+    f.write(list_components_class_interpolated[1].name + '_nprocs=( ' + ''.join('%s ' % x[1] for x in optimal_result['top_configurations']) + ')\n')
 
 
 if __name__ == "__main__":
@@ -140,7 +145,7 @@ if __name__ == "__main__":
     num_components = len(config['Components'])
     TTS_r = config['General']['TTS_ratio']
     ETS_r = 1 - TTS_r
-    nodesize = config['General']['node_size']
+    nproc_step = config['General']['nproc_step']
     method = config['General']['interpo_method']  # ['linear', 'slinear', 'quadratic', 'cubic']
     max_nproc = config['General']['max_nproc']
     show_plots = config['General']['show_plots']
@@ -177,7 +182,7 @@ if __name__ == "__main__":
                                     component['nproc_restriction'], ts_info_df, component['timestep_nproc'], TTS_r, ETS_r)
         list_components_class.append(component_class)
         # Interpolate the data
-        df_component_interpolated = interpolate_data(component_class)
+        df_component_interpolated = interpolate_data(component_class, nproc_step)
         list_components_interpolated.append(df_component_interpolated)
 
         # TODO: Select one of the methods

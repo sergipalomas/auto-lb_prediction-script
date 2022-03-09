@@ -1,13 +1,13 @@
 ---
 Components:
-- name: IFS
+- name: ATMIFS # TODO: This should be parsed from input files¿?
   file: data/IFS_SR_Reduced_scalability_ece3.csv
   nproc_restriction: [48, 576]
   timestep_info: data/ts_data/ATMIFS_ts_576.csv
   timestep_nproc: 576
   # per node restriction: [48, 96, 144, 192, 240, 288, 336, 384, 432, 480, 528, 576, 624,672, 720, 768, 816, 864,
   #                       912, 960, 1008 ]
-- name: NEMO
+- name: oceanx
   file: data/NEMO_SR_Reduced_scalability_ece3.csv
   nproc_restriction: [48, 187]
   timestep_info: data/ts_data/oceanx_ts_187.csv

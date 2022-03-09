@@ -3,6 +3,7 @@ import time
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import warnings
 
 
 def minmax_df_normalization(df):
@@ -381,6 +382,8 @@ def new_brute_force(num_components, list_components_class_interpolated, max_npro
 
             # cpl CHSY
             df_ETS = df_nproc * 24 / df_TTS
+            cpl_cost = df_cpl_cost_chpsy / df_ETS
+
 
         else:
             # Assume regular timestep lengths
@@ -422,7 +425,8 @@ def new_brute_force(num_components, list_components_class_interpolated, max_npro
         # Create the final solution by averaging each result with its closest 4 neighbours (left, right, up, down)
         # I don't use this if there is a nproc_restriction. As the jump between consecutive nprocs can be too big and
         # averaging would be unfair.
-        if len(c1_n.nproc_restriction) == 0 and len(c2_n.nproc_restriction) == 0:
+        #if len(c1_n.nproc_restriction) == 0 and len(c2_n.nproc_restriction) == 0:
+        if False:
             row_rolling_mean = final_fitness.rolling(3, center=True, min_periods=2, axis=1).mean()
             col_rolling_mean = final_fitness.rolling(3, center=True, min_periods=2, axis=0).mean()
             f = (row_rolling_mean + col_rolling_mean) / 2
@@ -433,6 +437,7 @@ def new_brute_force(num_components, list_components_class_interpolated, max_npro
         else:
             nproc_c1 = final_fitness.max(axis=1).idxmax()
             nproc_c2 = final_fitness.max(axis=0).idxmax()
+            top_configurations = final_fitness.stack().nlargest(5).index
 
         # TODO: Fix cpl cost and chpsy output
         optimal_result = {
@@ -442,9 +447,10 @@ def new_brute_force(num_components, list_components_class_interpolated, max_npro
             "fitness_" + c2_n.name: c2_n.get_fitness([nproc_c2]),
             "objective_f": final_fitness.loc[nproc_c1, nproc_c2],
             "SYPD": df_TTS.loc[nproc_c1, nproc_c2],
-            "cpl_cost": 10, #cpl_cost.loc[nproc_c1, nproc_c2],
-            "cpl_chpsy": 10, #df_cpl_cost_chpsy.loc[nproc_c1, nproc_c2],
-            "speed_ratio": c1_n.get_sypd(nproc_c1)/c2_n.get_sypd(nproc_c2)
+            "cpl_cost": cpl_cost.loc[nproc_c1, nproc_c2],
+            "cpl_chpsy": df_cpl_cost_chpsy.loc[nproc_c1, nproc_c2],
+            "speed_ratio": c1_n.get_sypd(nproc_c1)/c2_n.get_sypd(nproc_c2),
+            "top_configurations": top_configurations
         }
 
     return optimal_result

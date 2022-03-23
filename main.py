@@ -1,4 +1,5 @@
 import pandas as pd
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy import interpolate
@@ -42,8 +43,9 @@ def check_interpo(num_components, list_components_class, list_components_scalabi
         ax2.set_xlabel('nproc')
         ax2.set_ylabel('fitness')
         ax2.legend(legend)
-
-        plt.show()
+        fig_name = c1.name + "_SYPD_Fitness_after_interpolating.png"
+        plt.savefig(fig_name)
+        #plt.show()
 
 
 
@@ -77,7 +79,9 @@ def interpolate_data(component, nproc_step):
             plt.plot(xnew, df[m])
         plt.legend(legend)
         plt.title("Check interpo " + component.name)
-        plt.show()
+        fig_name = component.name + "_check_interpo.png"
+        plt.savefig(fig_name)
+        #plt.show()
 
     return df
 
@@ -122,7 +126,9 @@ def print_result(num_components, list_components_class_interpolated, optimal_res
         legend.append("optimal " + c.name)
     plt.title("Fitness values")
     plt.legend(legend)
-    plt.show()
+    fig_name = "Fitness_values.png"
+    plt.savefig(fig_name)
+    #plt.show()
 
     # Save top configurations as txt file
     out_file = "top_configurations.txt"

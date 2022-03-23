@@ -103,7 +103,9 @@ class Component:
         ax1.set_ylim(bottom=0)
         ax2.set_ylim(bottom=0)
 
-        plt.show()
+        fig_name = self.name + "_solution.png"
+        plt.savefig(fig_name)
+        #plt.show()
 
     def plot_scalability_n(self, *opt_nproc):
         fig, ax1 = plt.subplots()
@@ -132,7 +134,9 @@ class Component:
                       (self.TTS_r, self.ETS_r))
         plt.legend(['TTS ratio', 'ETS ratio', 'Fitness'], loc=0)
 
-        plt.show()
+        fig_name = self.name + "_scalability_normalized.png"
+        plt.savefig(fig_name)
+        #plt.show()
 
     def plot_fitness(self, *opt_nproc):
         fig, ax1 = plt.subplots()

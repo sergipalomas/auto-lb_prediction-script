@@ -6,7 +6,7 @@ from scipy import interpolate
 import sys
 import yaml
 import os
-from mpl_toolkits.mplot3d import Axes3D
+mpl.use("Agg")
 
 
 def check_interpo(num_components, list_components_class, list_components_scalability_df):

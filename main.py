@@ -5,6 +5,7 @@ import numpy as np
 from scipy import interpolate
 import sys
 import yaml
+import os
 from mpl_toolkits.mplot3d import Axes3D
 
 
@@ -44,7 +45,7 @@ def check_interpo(num_components, list_components_class, list_components_scalabi
         ax2.set_ylabel('fitness')
         ax2.legend(legend)
         fig_name = c1.name + "_SYPD_Fitness_after_interpolating.png"
-        plt.savefig(fig_name)
+        plt.savefig("./img/" + fig_name)
         #plt.show()
 
 
@@ -127,7 +128,7 @@ def print_result(num_components, list_components_class_interpolated, optimal_res
     plt.title("Fitness values")
     plt.legend(legend)
     fig_name = "Fitness_values.png"
-    plt.savefig(fig_name)
+    plt.savefig("./img/" + fig_name)
     #plt.show()
 
     # Save top configurations as txt file
@@ -142,6 +143,9 @@ if __name__ == "__main__":
     if len(sys.argv) != 2:
         print("No configuration file provided!")
         exit(1)
+
+    # Create the directory to save the plots
+    os.makedirs("./img/", exist_ok=True)
 
     config_file = open(sys.argv[1])
     config = yaml.load(config_file, Loader=yaml.FullLoader)

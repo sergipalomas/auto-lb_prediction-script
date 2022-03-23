@@ -2,14 +2,14 @@
 Components:
 - name: ATMIFS # TODO: This should be parsed from input files¿?
   file: data/IFS_SR_Reduced_scalability_ece3.csv
-  nproc_restriction: [48, 576]
+  nproc_restriction:  #[48, 96, 144, 192, 240, 288, 336, 384, 432, 480, 528, 576, 624,672, 720, 768, 816, 864, 912, 960, 1008 ]
   timestep_info: data/ts_data/ATMIFS_ts_576.csv
   timestep_nproc: 576
   # per node restriction: [48, 96, 144, 192, 240, 288, 336, 384, 432, 480, 528, 576, 624,672, 720, 768, 816, 864,
   #                       912, 960, 1008 ]
 - name: oceanx
   file: data/NEMO_SR_Reduced_scalability_ece3.csv
-  nproc_restriction: [48, 187]
+  nproc_restriction: #[48, 96, 144, 192, 240, 288, 336, 384, 432, 480, 528, 576, 624,672, 720, 768, 816, 864, 912, 960, 1008 ]
   timestep_info: data/ts_data/oceanx_ts_187.csv
   timestep_nproc: 187
   # elPiN NEMO SR: [48,57,68,75,88,97,108,118,127,136,148,158,165,174,187,197,208,213,220,229,242,258,267,271,285,303,317,331,349,372,385,394,402,411,433,444,453,476,512,521,541,554,563,598,605,630,643,652,665,694,757,759,776,806,826,867,905,983,1008,1012,1061,1129,1164,1240,1261,1275,1427,1476,1594]
@@ -20,8 +20,8 @@ Components:
 #  nproc_restriction:
 
 General:
-  max_nproc: 767
-  TTS_ratio: .25
+  max_nproc: 724
+  TTS_ratio: .5
   interpo_method: quadratic
   show_plots: False
-  node_size: 48
+  nproc_step: 48

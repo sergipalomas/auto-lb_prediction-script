@@ -112,7 +112,6 @@ def print_result(num_components, list_components_class_interpolated, optimal_res
         print("%s/%s speed ratio: %.2f" % (list_components_class_interpolated[0].name, list_components_class_interpolated[1].name, optimal_result['speed_ratio']))
         print("Coupled Objective Function: %.3f" % optimal_result['objective_f'])
 
-
     fig, ax1 = plt.subplots()
     legend = list()
     for i in range(num_components):
@@ -126,7 +125,7 @@ def print_result(num_components, list_components_class_interpolated, optimal_res
     plt.show()
 
     # Save top configurations as txt file
-    out_file = "new_nprocs.txt"
+    out_file = "top_configurations.txt"
     f = open(out_file, "w")
     f.write(list_components_class_interpolated[0].name + '_nprocs=( ' + ''.join('%s ' % x[0] for x in optimal_result['top_configurations']) + ')\n')
     f.write(list_components_class_interpolated[1].name + '_nprocs=( ' + ''.join('%s ' % x[1] for x in optimal_result['top_configurations']) + ')\n')

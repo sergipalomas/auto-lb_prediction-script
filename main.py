@@ -185,7 +185,7 @@ if __name__ == "__main__":
             component['nproc_restriction'] = [np for np in component['nproc_restriction'] if
                                               np <= component_df.nproc.max() and np >= component_df.nproc.min()]
             print("Component %s has a nproc restriction:" % component['name'])
-            print("[", *component['nproc_restriction'], "]")
+            print(component['nproc_restriction'])
 
         component_class = Component(component['name'], component_df.nproc, component_df.SYPD,
                                     component['nproc_restriction'], ts_info_df, component['timestep_nproc'], TTS_r, ETS_r)

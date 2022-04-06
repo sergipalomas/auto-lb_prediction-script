@@ -132,10 +132,10 @@ def print_result(num_components, list_components_class_interpolated, optimal_res
     #plt.show()
 
     # Save top configurations as txt file
-    out_file = "top_configurations.txt"
+    out_file = "nproc_config_0"
     f = open(out_file, "w")
-    f.write(list_components_class_interpolated[0].name + '_nprocs=( ' + ''.join('%s ' % x[0] for x in optimal_result['top_configurations']) + ')\n')
-    f.write(list_components_class_interpolated[1].name + '_nprocs=( ' + ''.join('%s ' % x[1] for x in optimal_result['top_configurations']) + ')\n')
+    f.write(list_components_class_interpolated[0].name + '_nprocs_0=( ' + ''.join('%s ' % x[0] for x in optimal_result['top_configurations']) + ')\n')
+    f.write(list_components_class_interpolated[1].name + '_nprocs_0=( ' + ''.join('%s ' % x[1] for x in optimal_result['top_configurations']) + ')\n')
 
 
 if __name__ == "__main__":
@@ -205,7 +205,7 @@ if __name__ == "__main__":
     if show_plots:
         check_interpo(num_components, list_components_class_interpolated, list_components_interpolated)
 
-    from brute_force import brute_force, new_brute_force
+    from brute_force import new_brute_force
     optimal_result = new_brute_force(num_components, list_components_class_interpolated, max_nproc, show_plots)
 
     print_result(num_components, list_components_class_interpolated, optimal_result)

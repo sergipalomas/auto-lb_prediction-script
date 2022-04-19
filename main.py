@@ -113,7 +113,7 @@ def print_result(num_components, list_components_class_interpolated, optimal_res
         print("Total number of processes: %i" % nproc_acc)
         print("Expected coupled CHPSY: %i" % chpsy_acc)
         print("Expected coupled SYPD: %.2f" % optimal_result['SYPD'])
-        print("Expected coupling cost: %.2f %%, %.2f (CHPSY)" % (optimal_result['cpl_cost']*100, optimal_result['cpl_chpsy']))
+        print("Expected coupling cost: %.2f %%, (%.2f CHPSY)" % (optimal_result['cpl_cost']*100, optimal_result['cpl_chpsy']))
         print("%s/%s speed ratio: %.2f" % (list_components_class_interpolated[0].name, list_components_class_interpolated[1].name, optimal_result['speed_ratio']))
         print("Coupled Objective Function: %.3f" % optimal_result['objective_f'])
 

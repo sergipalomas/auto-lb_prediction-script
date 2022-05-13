@@ -91,29 +91,30 @@ def print_result(num_components, list_components_class_interpolated, optimal_res
 
     print("Optimal for TTS=%.1f, ETS=%.1f:" % (TTS_r, ETS_r))
     nproc_acc = 0
-    chpsy_acc = 0
+    chsy_acc = 0
     for component in list_components_class_interpolated:
         opt_nproc = optimal_result['nproc_' + component.name]
         print("\n -------------------------------\n")
         print("Results for component %s:" % component.name)
         print("Number of processes: %i" % opt_nproc)
         print("Fitness: %.2f" % component.get_fitness([opt_nproc]).fitness)
-        print("CHPSY: %i" % (component.get_chpsy(opt_nproc)))
+        print("CHPSY: %i" % (component.get_chsy(opt_nproc)))
         print("SYPD: %.2f" % component.get_sypd(opt_nproc))
         component.plot_scalability(opt_nproc)
         component.plot_scalability_n(opt_nproc)
         nproc_acc += opt_nproc
-        chpsy_acc += component.get_chpsy(opt_nproc)
+        chsy_acc += component.get_chsy(opt_nproc)
 
-    # We have to add the cpl_cost to the CHPSY
-    chpsy_acc += optimal_result['cpl_chpsy']
+
 
     if num_components > 1:
+        # We have to add the cpl_cost to the CHPSY
+        chsy_acc += optimal_result['cpl_chsy']
         print("\n -------------------------------\n")
         print("Total number of processes: %i" % nproc_acc)
-        print("Expected coupled CHPSY: %i" % chpsy_acc)
+        print("Expected coupled CHPSY: %i" % chsy_acc)
         print("Expected coupled SYPD: %.2f" % optimal_result['SYPD'])
-        print("Expected coupling cost: %.2f %%, (%.2f CHPSY)" % (optimal_result['cpl_cost']*100, optimal_result['cpl_chpsy']))
+        print("Expected coupling cost: %.2f %%, (%.2f CHPSY)" % (optimal_result['cpl_cost']*100, optimal_result['cpl_chsy']))
         print("%s/%s speed ratio: %.2f" % (list_components_class_interpolated[0].name, list_components_class_interpolated[1].name, optimal_result['speed_ratio']))
         print("Coupled Objective Function: %.3f" % optimal_result['objective_f'])
 
@@ -132,10 +133,11 @@ def print_result(num_components, list_components_class_interpolated, optimal_res
     #plt.show()
 
     # Save top configurations as txt file
-    out_file = "nproc_config_0"
-    f = open(out_file, "w")
-    f.write(list_components_class_interpolated[0].name + '_nprocs_0=( ' + ''.join('%s ' % x[0] for x in optimal_result['top_configurations']) + ')\n')
-    f.write(list_components_class_interpolated[1].name + '_nprocs_0=( ' + ''.join('%s ' % x[1] for x in optimal_result['top_configurations']) + ')\n')
+    if num_components > 1:
+        out_file = "nproc_config_0"
+        f = open(out_file, "w")
+        f.write(list_components_class_interpolated[0].name + '_nprocs_0=( ' + ''.join('%s ' % x[0] for x in optimal_result['top_configurations']) + ')\n')
+        f.write(list_components_class_interpolated[1].name + '_nprocs_0=( ' + ''.join('%s ' % x[1] for x in optimal_result['top_configurations']) + ')\n')
 
 
 if __name__ == "__main__":
@@ -206,6 +208,7 @@ if __name__ == "__main__":
         check_interpo(num_components, list_components_class_interpolated, list_components_interpolated)
 
     from brute_force import new_brute_force
+    print("Check fitness metric")
     optimal_result = new_brute_force(num_components, list_components_class_interpolated, max_nproc, show_plots)
 
     print_result(num_components, list_components_class_interpolated, optimal_result)

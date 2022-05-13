@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 
-def sypd2chpsy(nproc, sypd):
+def sypd2chsy(nproc, sypd):
     return nproc * 24 / sypd
 
 
@@ -17,14 +17,18 @@ class Component:
     def __init__(self, name, nproc, sypd, nproc_restriction, ts_info, ts_nproc, TTS_r, ETS_r):
         self.name = name
         self.nproc = nproc
+        self.min_nproc = min(nproc)
         self.sypd = pd.DataFrame({'nproc': nproc, 'SYPD': sypd})
         self.max_sypd = max(sypd)
-        self.chpsy = pd.DataFrame({'nproc': nproc, 'CHPSY': sypd2chpsy(nproc, sypd)})
+        self.chsy = pd.DataFrame({'nproc': nproc, 'CHPSY': sypd2chsy(nproc, sypd)})
+        self.speedup = pd.DataFrame({'nproc': nproc, 'speedup': self.get_speedup(nproc)})
+        self.efficiency = pd.DataFrame({'nproc': nproc, 'efficiency': self.get_efficiency(nproc)})
         self.sypd_n = pd.DataFrame({'nproc': nproc, 'SYPD': minmax_rescale(self.sypd.SYPD)})
-        self.chpsy_n = pd.DataFrame({'nproc': nproc, 'CHPSY': 1 - minmax_rescale(self.chpsy.CHPSY)})
+        self.chsy_n = pd.DataFrame({'nproc': nproc, 'CHPSY': 1 - minmax_rescale(self.chsy.CHPSY)})
         self.TTS_r = TTS_r
         self.ETS_r = ETS_r
         self.fitness = pd.DataFrame({'nproc': nproc, 'fitness': self.compute_fitness()})
+        self.fitness2 = pd.DataFrame({'nproc': nproc, 'fitness2': self.compute_fitness2()})
         self.nproc_restriction = pd.Series(nproc_restriction)
         self.ts_info = ts_info
         self.ts_nproc = ts_nproc
@@ -43,28 +47,34 @@ class Component:
         return self.sypd_n[self.sypd_n.nproc == nproc].SYPD
 
     def get_speedup(self, nproc):
-        return self.get_sypd_v(nproc) / self.get_sypd(self.ts_nproc)
+        return self.get_sypd_v(nproc) / self.get_sypd(self.min_nproc)
 
-    def get_chpsy(self, nproc):
-        return self.chpsy[self.nproc == nproc].CHPSY.iloc[0]
+    def get_efficiency(self, nproc):
+        return self.get_speedup(nproc) / (nproc/self.min_nproc)
 
-    def get_chpsy2(self, nproc):
-        return self.chpsy[self.nproc.isin(nproc)].CHPSY
+    def get_chsy(self, nproc):
+        return self.chsy[self.nproc == nproc].CHPSY.iloc[0]
 
-    def get_chpsy_n(self, nproc):
-        return self.chpsy_n[self.chpsy_n.nproc == nproc].CHPSY
+    def get_chsy2(self, nproc):
+        return self.chsy[self.nproc.isin(nproc)].CHPSY
+
+    def get_chsy_n(self, nproc):
+        return self.chsy_n[self.chsy_n.nproc == nproc].CHPSY
 
     def get_fitness(self, nproc):
         return self.fitness[self.nproc.isin(nproc)]
 
     def compute_fitness(self):
-        return self.TTS_r * self.sypd_n.SYPD + self.ETS_r * self.chpsy_n.CHPSY
+        return self.TTS_r * self.sypd_n.SYPD + self.ETS_r * self.chsy_n.CHPSY
+
+    def compute_fitness2(self):
+        return self.speedup.speedup * self.efficiency.efficiency
 
     def plot_sypd(self):
         plt.plot(self.nproc, self.sypd)
 
-    def plot_chpsy(self):
-        plt.plot(self.nproc, self.chpsy)
+    def plot_chsy(self):
+        plt.plot(self.nproc, self.chsy)
 
     def plot_scalability(self, *opt_nproc):
         fig, ax1 = plt.subplots()
@@ -73,16 +83,16 @@ class Component:
         if len(opt_nproc) == 1:
             optimal_nproc = opt_nproc[0]
             optimal_sypd = self.get_sypd(opt_nproc)
-            optimal_chpsy = self.get_chpsy(opt_nproc)
+            optimal_chsy = self.get_chsy(opt_nproc)
             ax1.axvline(x=opt_nproc, ls='-.', c='k', label='Optimal: %i proc' % optimal_nproc)
             self.sypd.plot(x="nproc", y="SYPD", color='tab:blue', ax=ax1, label='SYPD: %.2f' % optimal_sypd, legend=False)
-            self.chpsy.plot(x="nproc", y="CHPSY", color='tab:orange', ax=ax2, label='CHPSY: %i' % optimal_chpsy,legend=False)
+            self.chsy.plot(x="nproc", y="CHPSY", color='tab:orange', ax=ax2, label='CHPSY: %i' % optimal_chsy,legend=False)
             sypd_text = ' %.2f' % optimal_sypd
             ax1.plot(opt_nproc[0], optimal_sypd, 'ko', markersize=5)
             ax1.text(opt_nproc[0], optimal_sypd, sypd_text)
-            chpsy_text = ' %i' % optimal_chpsy
-            ax2.plot(opt_nproc[0], optimal_chpsy, 'ko', markersize=5)
-            ax2.text(opt_nproc[0], optimal_chpsy, chpsy_text)
+            chsy_text = ' %i' % optimal_chsy
+            ax2.plot(opt_nproc[0], optimal_chsy, 'ko', markersize=5)
+            ax2.text(opt_nproc[0], optimal_chsy, chsy_text)
             lns = [ax1.lines[0], ax1.lines[1], ax2.lines[0]]
             labels = [l.get_label() for l in lns]
             ax1.legend(handles=lns, labels=labels, loc=0)
@@ -90,7 +100,7 @@ class Component:
 
         else:
             self.sypd.plot(x="nproc", y="SYPD", color='tab:blue', ax=ax1, legend=False)
-            self.chpsy.plot(x="nproc", y="CHPSY", color='tab:orange', ax=ax2, legend=False)
+            self.chsy.plot(x="nproc", y="CHPSY", color='tab:orange', ax=ax2, legend=False)
             lns = [ax1.lines[1], ax2.lines[0]]
             labels = [l.get_label() for l in lns]
             ax1.legend(handles=lns, labels=labels, loc=0)
@@ -110,21 +120,21 @@ class Component:
     def plot_scalability_n(self, *opt_nproc):
         fig, ax1 = plt.subplots()
         self.sypd_n.plot(x="nproc", y="SYPD", color='tab:blue', ax=ax1)
-        self.chpsy_n.plot(x="nproc", y="CHPSY", color='tab:orange', ax=ax1)
+        self.chsy_n.plot(x="nproc", y="CHPSY", color='tab:orange', ax=ax1)
         self.fitness.plot(x="nproc", y="fitness", color='black', ax=ax1)
 
         if len(opt_nproc) == 1:
             optimal_nproc = opt_nproc[0]
             optimal_sypd_n = self.get_sypd_n(optimal_nproc)
-            optimal_chpsy_n = self.get_chpsy_n(optimal_nproc)
+            optimal_chsy_n = self.get_chsy_n(optimal_nproc)
             optimal_fitness = self.get_fitness([optimal_nproc]).fitness
             ax1.axvline(x=optimal_nproc, ls='-.', c='k', label='Optimal: %i proc' % optimal_nproc, alpha=1.)
             sypd_text = ' %.2f' % optimal_sypd_n
             ax1.plot(optimal_nproc, optimal_sypd_n, 'ko', markersize=5)
             ax1.text(optimal_nproc, optimal_sypd_n, sypd_text)
-            chpsy_text = ' %.2f' % optimal_chpsy_n
-            ax1.plot(optimal_nproc, optimal_chpsy_n, 'ko', markersize=5)
-            ax1.text(optimal_nproc, optimal_chpsy_n, chpsy_text)
+            chsy_text = ' %.2f' % optimal_chsy_n
+            ax1.plot(optimal_nproc, optimal_chsy_n, 'ko', markersize=5)
+            ax1.text(optimal_nproc, optimal_chsy_n, chsy_text)
             fitness_text = ' %.2f' % optimal_fitness
             ax1.plot(optimal_nproc, optimal_fitness, 'ko', markersize=5)
             ax1.text(optimal_nproc, optimal_fitness, fitness_text)

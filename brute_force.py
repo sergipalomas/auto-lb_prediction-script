@@ -7,10 +7,10 @@ import warnings
 
 
 def minmax_df_normalization(df):
-    column_maxes = df.max()
-    df_max = column_maxes.max()
-    column_mins = df.min()
-    df_min = column_mins.min()
+    columns_max = df.max()
+    df_max = columns_max.max()
+    columns_min = df.min()
+    df_min = columns_min.min()
     normalized_df = (df - df_min) / (df_max - df_min)
     return normalized_df
 
@@ -24,17 +24,17 @@ def plot3d_fitness(c1_n, c2_n, fitness_mx, final_fitness, max_nproc):
     Z_mk_max_nproc = Z.T * mk
     Z_mk_max_nproc[Z_mk_max_nproc == 0] = np.nan
     fig, ax = plt.subplots(4, 2, figsize=(8, 20), subplot_kw=dict(projection="3d"))
-    for idx, angle in enumerate(range(181, 362, 30)):
+    for idx, rotation in enumerate(range(181, 362, 30)):
         i = int(idx / 2)
         j = int(idx % 2)
         ax[i, j].plot_surface(X, Y, Z.T, cmap='viridis')
         ax[i, j].plot_surface(X, Y, Z_mk_same_sypd, color='gold')
         ax[i, j].plot_surface(X, Y, Z_mk_max_nproc, color='lightcoral', alpha=.5)
-        ax[i, j].set_title("angle=" + str(angle))
+        ax[i, j].set_title("rotation=" + str(rotation))
         ax[i, j].set_xlabel(c1_n.name)
         ax[i, j].set_ylabel(c2_n.name)
         ax[i, j].set_zlabel('obj_f')
-        ax[i, j].view_init(elev=20., azim=angle)
+        ax[i, j].view_init(elev=20., azim=rotation)
 
     ax[3, 1].plot_surface(X, Y, Z.T, cmap='viridis')
     ax[3, 1].plot_surface(X, Y, Z_mk_same_sypd, color='gold')

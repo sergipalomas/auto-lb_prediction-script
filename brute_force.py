@@ -180,19 +180,20 @@ def new_brute_force(num_components, list_components_class_interpolated, max_npro
 
     if num_components == 1:
         c1_n = list_components_class_interpolated[0]
-        mask_max_nproc = c1_n.nproc <= max_nproc
-        if c1_n.nproc_restriction.shape[0] > 0:
-            mask_nproc_restriction = c1_n.nproc.isin(c1_n.nproc_restriction)
-        else:
-            mask_nproc_restriction = True
-        rolling_mean = c1_n.fitness.fitness.rolling(10, center=True).mean() * mask_max_nproc * mask_nproc_restriction
-        max_idx = rolling_mean.idxmax()
-        opt_nproc = c1_n.fitness.nproc.iloc[max_idx]
+        # mask_max_nproc = c1_n.nproc <= max_nproc
+        # if c1_n.nproc_restriction.shape[0] > 0:
+        #     mask_nproc_restriction = c1_n.nproc.isin(c1_n.nproc_restriction)
+        # else:
+        #     mask_nproc_restriction = True
+
+        # rolling_mean = c1_n.fitness.fitness.rolling(max(2, round(c1_n.nproc.shape[0]*0.15)), center=True).mean() * mask_max_nproc * mask_nproc_restriction
+        # max_idx = rolling_mean.idxmax()
+        opt_nproc = c1_n.fitness.nproc[c1_n.fitness.fitness.idxmax()]
 
         optimal_result = {
             "nproc_" + c1_n.name: opt_nproc,
             "fitness_" + c1_n.name: c1_n.get_fitness([opt_nproc]),
-            "objective_f": c1_n.fitness.fitness.loc[max_idx],
+            "objective_f": c1_n.fitness.fitness[c1_n.fitness.nproc == opt_nproc],
             "SYPD": c1_n.get_sypd(opt_nproc),
         }
 

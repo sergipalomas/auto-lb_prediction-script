@@ -175,7 +175,7 @@ if __name__ == "__main__":
     information_per_ts_provided = True
     # Load component data
     for component in config['Components']:
-        if component['timestep_info'] != None:
+        if (component['timestep_info'] is not None) and (component['timestep_nproc'] is not None):
             ts_info_df = pd.read_csv(component['timestep_info'])
             ts_info_df.rename(columns={ts_info_df.columns[0]: "ts_id"}, inplace=True)
             ts_info_nproc = component['timestep_nproc']
@@ -184,29 +184,31 @@ if __name__ == "__main__":
             ts_info_nproc = 0
             information_per_ts_provided = False
 
+        # Load scalability curve
         component_df = pd.read_csv(component['file'])
+        # Remove configurations that would surpass the nproc limitation (max_nproc)
         component_df = component_df[component_df.nproc <= max_nproc]
         list_components_scalability_df.append(component_df)  # Save this just for debugging
         # Make sure that the nproc restriction is inside the range of scalability provided for that component
-        if component['nproc_restriction'] != None:
+        if component['nproc_restriction'] is not None:
             component['nproc_restriction'] = [np for np in component['nproc_restriction'] if
-                                              np <= component_df.nproc.max() and np >= component_df.nproc.min()]
+                                              component_df.nproc.min() <= np <= component_df.nproc.max()]
             print("Component %s has a nproc restriction:" % component['name'])
             print(component['nproc_restriction'])
 
-        component_class = Component(component['name'], component_df.nproc, component_df.SYPD,
+        c = Component(component['name'], component_df.nproc, component_df.SYPD,
                                     component['nproc_restriction'], ts_info_df, component['timestep_nproc'], TTS_r, ETS_r)
-        list_components_class.append(component_class)
         # Interpolate the data
-        df_component_interpolated = interpolate_data(component_class, nproc_step)
+        component_class, df_component_interpolated = interpolate_data(c, nproc_step)
+        list_components_class.append(component_class)
         list_components_interpolated.append(df_component_interpolated)
 
         # TODO: Select one of the methods
         comp_interpolated = pd.DataFrame({'nproc': df_component_interpolated.nproc,
                                            'SYPD': df_component_interpolated[method]})
 
-        c1_n = Component(component['name'], comp_interpolated.nproc, comp_interpolated.SYPD,
-                         component['nproc_restriction'], ts_info_df, ts_info_nproc, TTS_r, ETS_r)
+        c1_n = Component(c.name, comp_interpolated.nproc, comp_interpolated.SYPD,
+                         c.nproc_restriction, ts_info_df, ts_info_nproc, TTS_r, ETS_r)
         list_components_class_interpolated.append(c1_n)
 
     if show_plots:

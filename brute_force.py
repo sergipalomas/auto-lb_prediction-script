@@ -216,16 +216,13 @@ def new_brute_force(num_components, list_components_class_interpolated, max_npro
         df_TTS.columns = c2_n.nproc
 
         ### ETS matrix (in CHSY)
-        # Note! Still not accounting for cpl_cost chsy, just  the sum of the models execution
-        df_chsy = df_chsy_tmp.apply(lambda x: x.index + x.name)
-        df_chsy.index = c1_n.nproc
-        df_chsy.columns = c2_n.nproc
+        df_ETS = df_TTS.apply(lambda x: (x.name + x.index)*24/x)
 
         # CHPSY matrix
-        t0 = time.time()
         if len(c1_n.ts_info != 0) and len(c2_n.ts_info != 0):
             # Use information per timestep to find best combination of processes
             print("Using timestep lengths information")
+            t0 = time.time()
             if show_plots:
                 plot_timesteps_IFS(c1_n)
                 plot_timesteps(c2_n)
@@ -241,8 +238,10 @@ def new_brute_force(num_components, list_components_class_interpolated, max_npro
             df_cpl_cost_chsy = df_cpl_cost_ch / SY
 
             # cpl CHSY
-            df_ETS = df_chsy.add(abs(df_cpl_cost_chsy))
+            #df_ETS = df_chsy.add(abs(df_cpl_cost_chsy)) !TODO: REDO
             cpl_cost = df_cpl_cost_chsy / df_ETS
+
+            print("execution time using ts info: ", time.time() - t0)
 
         else:
             # Assume regular timestep lengths
@@ -250,31 +249,37 @@ def new_brute_force(num_components, list_components_class_interpolated, max_npro
             ratio = df_sypd_tmp.apply(lambda col: col.index / col.name)
             c1_waits = 1 - 1 / ratio[ratio > 1]
             c2_waits = 1 - ratio[ratio < 1]
-            c1_waits_cost = c1_waits.mul(c1_n.chsy.CHPSY.values, axis=0)
-            c2_waits_cost = c2_waits.mul(c2_n.chsy.CHPSY.values, axis=1)
+            coupled_c2_chsy = df_ETS.mul(c2_n.nproc.values / df_nproc, axis=0)
+            coupled_c1_chsy = df_ETS - coupled_c2_chsy
+            c1_waits_cost = c1_waits.values*coupled_c1_chsy
+            c2_waits_cost = c2_waits.values*coupled_c2_chsy
             df_cpl_cost_chsy = c1_waits_cost.add(c2_waits_cost, fill_value=0)
-            df_cpl_cost_chsy.index = c1_n.nproc
-            df_cpl_cost_chsy.columns = c2_n.nproc
 
             ### ETS matrix
             # Add cpl_cost chsy overhead to ETS matrix
-            df_ETS = df_chsy.add(abs(df_cpl_cost_chsy))
             cpl_cost = df_cpl_cost_chsy / df_ETS
 
-        print("execution time using ts info: ", time.time() - t0)
 
         if show_plots:
             plot3d_cpl_cost(c1_n, c2_n, df_cpl_cost_chsy)
 
+        perf_eff_metric = get_performance_efficiency_metric(df_TTS)
+        mask_best_results = perf_eff_metric >= perf_eff_metric.stack().quantile(.75)
+
+        #df_ETS_stacked = df_ETS.stack()
+        #df_ETS_tmp = df_ETS_stacked[np.abs(df_ETS_stacked-df_ETS_stacked.mean()) <= 2*df_ETS_stacked.std()].unstack()
+
+        df_top_TTS = df_TTS[mask_best_results]
+        df_top_ETS = df_ETS[mask_best_results]
+
         # Min/Max normalization
-        f_TTS = minmax_df_normalization(df_TTS)
+        f_TTS = minmax_df_normalization(df_top_TTS)
         # Note that we want to minimize the cost. Therefore, I use 1 - cost to have a maximization problem
-        f_ETS = 1 - minmax_df_normalization(df_ETS)
+        f_ETS = 1 - minmax_df_normalization(df_top_ETS)
 
         # Objective Function
         final_fitness = c1_n.TTS_r * f_TTS + c1_n.ETS_r * f_ETS
 
-        #final_fitness = get_performance_efficiency_metric(df_TTS)
         # Filter by max_nproc allowed
         final_fitness = final_fitness[mask_max_nproc]
 

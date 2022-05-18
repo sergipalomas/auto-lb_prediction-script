@@ -110,15 +110,15 @@ def plot3d_cpl_cost(c1_n, c2_n, cpl_cost):
     Z = cpl_cost.to_numpy()
 
     fig, ax = plt.subplots(4, 2, figsize=(8, 20), subplot_kw=dict(projection="3d"))
-    for idx, angle in enumerate(range(181, 362, 60)):
+    for idx, rotation in enumerate(range(181, 362, 30)):
         i = int(idx / 2)
         j = int(idx % 2)
         ax[i, j].plot_surface(X, Y, Z.T, cmap='viridis')
-        ax[i, j].set_title("angle=" + str(angle))
+        ax[i, j].set_title("rotation=" + str(rotation))
         ax[i, j].set_xlabel(c1_n.name)
         ax[i, j].set_ylabel(c2_n.name)
         ax[i, j].set_zlabel('cpl_cost')
-        ax[i, j].view_init(elev=20., azim=angle)
+        ax[i, j].view_init(elev=20., azim=rotation)
 
     ax[3, 1].plot_surface(X, Y, Z.T, cmap='viridis')
     ax[3, 1].set_title("Coupling cost")

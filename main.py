@@ -59,32 +59,39 @@ def interpolate_data(component, nproc_step):
     legend.insert(0, 'real')
 
     ## Interpolation
+    xold = component.nproc.values
     if len(component.nproc_restriction) != 0:
         xnew = component.nproc_restriction.values
     else:
         xnew = np.arange(nproc_start, nproc_end, nproc_step)
+        component.nproc_restriction = xnew
     if len(component.ts_info) != 0 and component.ts_nproc not in xnew:
         xnew = np.append(xnew, component.ts_nproc)
-        xnew.sort()
+
+    x = np.sort(np.unique(np.concatenate((xold, xnew))))
     tmp_component = pd.Series([component.sypd.SYPD[component.nproc[component.nproc == n].index[0]]
-                               if n in component.nproc.values else np.NaN for n in xnew])
-    df = pd.DataFrame({'nproc': xnew, 'real': tmp_component})
+                               if n in component.nproc.values else np.NaN for n in x])
+    df = pd.DataFrame({'nproc': x, 'real': tmp_component})
     for m in methods:
         f = interpolate.interp1d(component.nproc, component.sypd.SYPD, kind=m, fill_value="extrapolate")
-        ynew = f(xnew).round(2)
+        ynew = f(x).round(2)
         df[m] = pd.DataFrame({m: ynew})
 
     if show_plots:
         plt.plot(component.nproc, component.sypd.SYPD, 'o')
         for m in methods:
-            plt.plot(xnew, df[m])
+            plt.plot(x, df[m])
         plt.legend(legend)
         plt.title("Check interpo " + component.name)
         fig_name = component.name + "_check_interpo.png"
         plt.savefig(fig_name)
         #plt.show()
 
-    return df
+    # Filter only with the nproc restriction and ts_nproc (do not include nproc configs from scalability curve)
+    # TODO: I think this is redundant: interpolate.interp1d does only need the scalability curve points. Then it its used
+    # for whatever xnew values I want.
+    df_with_data_interpolated = df[df.nproc.isin(xnew)]
+    return component, df_with_data_interpolated
 
 
 def print_result(num_components, list_components_class_interpolated, optimal_result):
@@ -104,8 +111,6 @@ def print_result(num_components, list_components_class_interpolated, optimal_res
         component.plot_scalability_n(opt_nproc)
         nproc_acc += opt_nproc
         chsy_acc += component.get_chsy(opt_nproc)
-
-
 
     if num_components > 1:
         # We have to add the cpl_cost to the CHPSY

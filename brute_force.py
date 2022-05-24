@@ -264,13 +264,13 @@ def new_brute_force(num_components, list_components_class_interpolated, max_npro
             plot3d_cpl_cost(c1_n, c2_n, df_cpl_cost_chsy)
 
         perf_eff_metric = get_performance_efficiency_metric(df_TTS)
-        mask_best_results = perf_eff_metric >= perf_eff_metric.stack().quantile(.75)
+        mask_best_results = perf_eff_metric >= perf_eff_metric.stack().quantile(.25)
 
         #df_ETS_stacked = df_ETS.stack()
         #df_ETS_tmp = df_ETS_stacked[np.abs(df_ETS_stacked-df_ETS_stacked.mean()) <= 2*df_ETS_stacked.std()].unstack()
 
-        df_top_TTS = df_TTS[mask_best_results]
-        df_top_ETS = df_ETS[mask_best_results]
+        df_top_TTS = df_TTS[mask_best_results * mask_max_nproc]
+        df_top_ETS = df_ETS[mask_best_results * mask_max_nproc]
 
         # Min/Max normalization
         f_TTS = minmax_df_normalization(df_top_TTS)
@@ -280,7 +280,16 @@ def new_brute_force(num_components, list_components_class_interpolated, max_npro
         # Objective Function
         final_fitness = c1_n.TTS_r * f_TTS + c1_n.ETS_r * f_ETS
 
+
         # Filter by max_nproc allowed
+        mask_better_basecase = perf_eff_metric >= 1
+        df_good_TTS = df_TTS[mask_better_basecase * mask_max_nproc]
+        df_good_ETS = df_ETS[mask_better_basecase * mask_max_nproc]
+        f_TTS_new = minmax_df_normalization(df_good_TTS)
+        f_ETS_new = 1 - minmax_df_normalization(df_good_ETS)
+        new_final_fitness = c1_n.TTS_r * f_TTS_new + c1_n.ETS_r * f_ETS_new
+
+
         final_fitness = final_fitness[mask_max_nproc]
 
         # Create the final solution by averaging each result with its closest 4 neighbours (left, right, up, down)
@@ -296,8 +305,7 @@ def new_brute_force(num_components, list_components_class_interpolated, max_npro
 
         # Just pick up the maximum from the table.
         else:
-            nproc_c1 = final_fitness.max(axis=1).idxmax()
-            nproc_c2 = final_fitness.max(axis=0).idxmax()
+            nproc_c1, nproc_c2 = final_fitness.stack().idxmax()
             top_configurations = final_fitness.stack().nlargest(5).index
 
         # TODO: Fix cpl cost and chsy output

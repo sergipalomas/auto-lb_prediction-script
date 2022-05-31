@@ -289,6 +289,9 @@ def new_brute_force(num_components, list_components_class_interpolated, max_npro
         f_ETS_new = 1 - minmax_df_normalization(df_good_ETS)
         new_final_fitness = c1_n.TTS_r * f_TTS_new + c1_n.ETS_r * f_ETS_new
 
+        top10_fitness = final_fitness.stack().nlargest(10)
+        top10_newfitness = new_final_fitness.stack().nlargest(10)
+        top10_perf_eff = perf_eff_metric[mask_max_nproc].stack().nlargest(10)
 
         final_fitness = final_fitness[mask_max_nproc]
 

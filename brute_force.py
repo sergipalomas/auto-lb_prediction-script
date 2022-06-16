@@ -269,8 +269,8 @@ def new_brute_force(num_components, list_components_class_interpolated, max_npro
         #df_ETS_stacked = df_ETS.stack()
         #df_ETS_tmp = df_ETS_stacked[np.abs(df_ETS_stacked-df_ETS_stacked.mean()) <= 2*df_ETS_stacked.std()].unstack()
 
-        df_top_TTS = df_TTS[mask_best_results * mask_max_nproc]
-        df_top_ETS = df_ETS[mask_best_results * mask_max_nproc]
+        df_top_TTS = df_TTS[mask_best_results & mask_max_nproc]
+        df_top_ETS = df_ETS[mask_best_results & mask_max_nproc]
 
         # Min/Max normalization
         f_TTS = minmax_df_normalization(df_top_TTS)
@@ -283,8 +283,8 @@ def new_brute_force(num_components, list_components_class_interpolated, max_npro
 
         # Filter by max_nproc allowed
         mask_better_basecase = perf_eff_metric >= 1
-        df_good_TTS = df_TTS[mask_better_basecase * mask_max_nproc]
-        df_good_ETS = df_ETS[mask_better_basecase * mask_max_nproc]
+        df_good_TTS = df_TTS[mask_better_basecase & mask_max_nproc]
+        df_good_ETS = df_ETS[mask_better_basecase & mask_max_nproc]
         f_TTS_new = minmax_df_normalization(df_good_TTS)
         f_ETS_new = 1 - minmax_df_normalization(df_good_ETS)
         new_final_fitness = c1_n.TTS_r * f_TTS_new + c1_n.ETS_r * f_ETS_new
@@ -293,7 +293,7 @@ def new_brute_force(num_components, list_components_class_interpolated, max_npro
         top10_newfitness = new_final_fitness.stack().nlargest(10)
         top10_perf_eff = perf_eff_metric[mask_max_nproc].stack().nlargest(10)
 
-        final_fitness = final_fitness[mask_max_nproc]
+        final_fitness = new_final_fitness[mask_max_nproc]
 
         # Create the final solution by averaging each result with its closest 4 neighbours (left, right, up, down)
         # I don't use this if there is a nproc_restriction. As the jump between consecutive nprocs can be too big and

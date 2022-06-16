@@ -6,7 +6,7 @@ from scipy import interpolate
 import sys
 import yaml
 import os
-mpl.use("Agg")
+#mpl.use("Agg")
 
 
 def check_interpo(num_components, list_components_class, list_components_scalability_df):
@@ -46,7 +46,7 @@ def check_interpo(num_components, list_components_class, list_components_scalabi
         ax2.legend(legend)
         fig_name = c1.name + "_SYPD_Fitness_after_interpolating.png"
         plt.savefig("./img/" + fig_name)
-        #plt.show()
+        plt.show()
 
 
 

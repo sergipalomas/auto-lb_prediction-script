@@ -96,15 +96,13 @@ class Component:
             lns = [ax1.lines[0], ax1.lines[1], ax2.lines[0]]
             labels = [l.get_label() for l in lns]
             ax1.legend(handles=lns, labels=labels, loc=0)
-            ax1.set_title("Solution for " + self.name)
+            ax1.set_title("Solution for " + self.name + "\n" + "TTS: %.2f    ETS: %.2f" %
+                          (self.TTS_r, self.ETS_r))
 
         else:
             self.sypd.plot(x="nproc", y="SYPD", color='tab:blue', ax=ax1, legend=False)
             self.chsy.plot(x="nproc", y="CHPSY", color='tab:orange', ax=ax2, legend=False)
-            lns = [ax1.lines[1], ax2.lines[0]]
-            labels = [l.get_label() for l in lns]
-            ax1.legend(handles=lns, labels=labels, loc=0)
-            ax1.set_title("Solution for " + self.name)
+            ax1.set_title(self.name + " scalability")
 
         ax1.set_xlabel('nproc')
         ax1.set_ylabel('SYPD', color='tab:blue')
@@ -115,7 +113,7 @@ class Component:
 
         fig_name = self.name + "_solution.png"
         plt.savefig("./img/" + fig_name)
-        #plt.show()
+        plt.show()
 
     def plot_scalability_n(self, *opt_nproc):
         fig, ax1 = plt.subplots()

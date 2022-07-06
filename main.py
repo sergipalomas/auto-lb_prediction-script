@@ -85,7 +85,7 @@ def interpolate_data(component, nproc_step):
         plt.title("Check interpo " + component.name)
         fig_name = component.name + "_check_interpo.png"
         plt.savefig(fig_name)
-        #plt.show()
+        plt.show()
 
     # Filter only with the nproc restriction and ts_nproc (do not include nproc configs from scalability curve)
     # TODO: I think this is redundant: interpolate.interp1d does only need the scalability curve points. Then it its used

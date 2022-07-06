@@ -20,11 +20,11 @@ class Component:
         self.min_nproc = min(nproc)
         self.sypd = pd.DataFrame({'nproc': nproc, 'SYPD': sypd})
         self.max_sypd = max(sypd)
-        self.chsy = pd.DataFrame({'nproc': nproc, 'CHPSY': sypd2chsy(nproc, sypd)})
+        self.chsy = pd.DataFrame({'nproc': nproc, 'CHSY': sypd2chsy(nproc, sypd)})
         self.speedup = pd.DataFrame({'nproc': nproc, 'speedup': self.get_speedup(nproc)})
         self.efficiency = pd.DataFrame({'nproc': nproc, 'efficiency': self.get_efficiency(nproc)})
         self.sypd_n = pd.DataFrame({'nproc': nproc, 'SYPD': minmax_rescale(self.sypd.SYPD)})
-        self.chsy_n = pd.DataFrame({'nproc': nproc, 'CHPSY': 1 - minmax_rescale(self.chsy.CHPSY)})
+        self.chsy_n = pd.DataFrame({'nproc': nproc, 'CHSY': 1 - minmax_rescale(self.chsy.CHSY)})
         self.TTS_r = TTS_r
         self.ETS_r = ETS_r
         self.fitness = pd.DataFrame({'nproc': nproc, 'fitness': self.compute_fitness()})
@@ -53,19 +53,19 @@ class Component:
         return self.get_speedup(nproc) / (nproc/self.min_nproc)
 
     def get_chsy(self, nproc):
-        return self.chsy[self.nproc == nproc].CHPSY.iloc[0]
+        return self.chsy[self.nproc == nproc].CHSY.iloc[0]
 
     def get_chsy2(self, nproc):
-        return self.chsy[self.nproc.isin(nproc)].CHPSY
+        return self.chsy[self.nproc.isin(nproc)].CHSY
 
     def get_chsy_n(self, nproc):
-        return self.chsy_n[self.chsy_n.nproc == nproc].CHPSY
+        return self.chsy_n[self.chsy_n.nproc == nproc].CHSY
 
     def get_fitness(self, nproc):
         return self.fitness[self.nproc.isin(nproc)]
 
     def compute_fitness(self):
-        return self.TTS_r * self.sypd_n.SYPD + self.ETS_r * self.chsy_n.CHPSY
+        return self.TTS_r * self.sypd_n.SYPD + self.ETS_r * self.chsy_n.CHSY
 
     def compute_fitness2(self):
         return self.speedup.speedup * self.efficiency.efficiency
@@ -86,7 +86,7 @@ class Component:
             optimal_chsy = self.get_chsy(opt_nproc)
             ax1.axvline(x=opt_nproc, ls='-.', c='k', label='Optimal: %i proc' % optimal_nproc)
             self.sypd.plot(x="nproc", y="SYPD", color='tab:blue', ax=ax1, label='SYPD: %.2f' % optimal_sypd, legend=False)
-            self.chsy.plot(x="nproc", y="CHPSY", color='tab:orange', ax=ax2, label='CHPSY: %i' % optimal_chsy,legend=False)
+            self.chsy.plot(x="nproc", y="CHSY", color='tab:orange', ax=ax2, label='CHSY: %i' % optimal_chsy,legend=False)
             sypd_text = ' %.2f' % optimal_sypd
             ax1.plot(opt_nproc[0], optimal_sypd, 'ko', markersize=5)
             ax1.text(opt_nproc[0], optimal_sypd, sypd_text)
@@ -101,12 +101,12 @@ class Component:
 
         else:
             self.sypd.plot(x="nproc", y="SYPD", color='tab:blue', ax=ax1, legend=False)
-            self.chsy.plot(x="nproc", y="CHPSY", color='tab:orange', ax=ax2, legend=False)
+            self.chsy.plot(x="nproc", y="CHSY", color='tab:orange', ax=ax2, legend=False)
             ax1.set_title(self.name + " scalability")
 
         ax1.set_xlabel('nproc')
         ax1.set_ylabel('SYPD', color='tab:blue')
-        ax2.set_ylabel('CHPSY', color='tab:orange')
+        ax2.set_ylabel('CHSY', color='tab:orange')
 
         ax1.set_ylim(bottom=0)
         ax2.set_ylim(bottom=0)
@@ -118,7 +118,7 @@ class Component:
     def plot_scalability_n(self, *opt_nproc):
         fig, ax1 = plt.subplots()
         self.sypd_n.plot(x="nproc", y="SYPD", color='tab:blue', ax=ax1)
-        self.chsy_n.plot(x="nproc", y="CHPSY", color='tab:orange', ax=ax1)
+        self.chsy_n.plot(x="nproc", y="CHSY", color='tab:orange', ax=ax1)
         self.fitness.plot(x="nproc", y="fitness", color='black', ax=ax1)
 
         if len(opt_nproc) == 1:

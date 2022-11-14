@@ -1,27 +1,34 @@
 ---
 Components:
 - name: ATMIFS # TODO: This should be parsed from input files¿?
-  file: data/IFS_SR_Reduced_scalability_ece3.csv
-  nproc_restriction:  #[48, 96, 144, 192, 240, 288, 336, 384, 432, 480, 528, 576, 624,672, 720, 768, 816, 864, 912, 960, 1008 ]
-  timestep_info: data/ts_data/ATMIFS_ts_576.csv
-  timestep_nproc: 576
+  file: data/ATMIFS_scalability_CMIP6.csv
+  #ATMIFS_scalability_CMIP6.csv
+  nproc_restriction: #[48,96,144,192,240,288,336,384,432,480,528,576,624,672,720,768,816,864,912,960,1008]
+    #[48, 96, 144, 192, 240, 288, 336, 384, 432, 480, 528, 576, 624,672, 720, 768, 816, 864, 912, 960, 1008 ]
+  timestep_info: #data/ts_data/ATMIFS_ts_CMIP6_384.csv
+  timestep_nproc: 384
   # per node restriction: [48, 96, 144, 192, 240, 288, 336, 384, 432, 480, 528, 576, 624,672, 720, 768, 816, 864,
   #                       912, 960, 1008 ]
 - name: oceanx
-  file: data/NEMO_SR_Reduced_scalability_ece3.csv
-  nproc_restriction: #[48, 96, 144, 192, 240, 288, 336, 384, 432, 480, 528, 576, 624,672, 720, 768, 816, 864, 912, 960, 1008 ]
-  timestep_info: data/ts_data/oceanx_ts_187.csv
-  timestep_nproc: 187
+  file: data/oceanx_scalability_CMIP6.csv
+  #oceanx_scalability_CMIP6.csv
+  nproc_restriction:
+  #[48,96,144,192,240,288,336,384,432,480,528,576,624,672,720,768,816,864,912,960,1008,1056,1104,1152,1200,1248]
+  #[48, 96, 144, 192, 240, 288, 336, 384, 432, 480, 528, 576, 624,672, 720, 768, 816, 864, 912, 960, 1008 ]
+  timestep_info: #data/ts_data/oceanx_ts_CMIP6_229.csv
+  timestep_nproc: 229
   # elPiN NEMO SR: [48,57,68,75,88,97,108,118,127,136,148,158,165,174,187,197,208,213,220,229,242,258,267,271,285,303,317,331,349,372,385,394,402,411,433,444,453,476,512,521,541,554,563,598,605,630,643,652,665,694,757,759,776,806,826,867,905,983,1008,1012,1061,1129,1164,1240,1261,1275,1427,1476,1594]
   # elPiN NEMO HR: [47,56,66,72,88,98,106,113,127,138,145,156,168,178,187,198,208,214,228,231,240,256,265,276,288,294,307,314,328,333,347,358,368,377,387,398,408,412,421,438,444,456,461,477,480,498,502,516,527,532,548,558,572,588,598,607,628,638,655,671,698,706,711,725,745,749,764,785,792,803,828,857,877,893,903,916,922,943,952,963,974,996,1016,1021,1030,1052,1086,1089,1105,1127,1145,1162,1183,1195,1210,1248,1294,1324,1343,1356,1382,1391,1401,1448,1466,1484,1499,1525,1543,1569,1596]
 
-#- Name: APP3
-#  File: data/APP3.csv
-#  nproc_restriction:
+- name: app3
+  file: data/APP3.csv
+  nproc_restriction:
+  timestep_info:
+  timestep_nproc:
 
 General:
-  max_nproc: 724
+  max_nproc: 1600
   TTS_ratio: .5
   interpo_method: quadratic
   show_plots: False
-  nproc_step: 48
+  nproc_step: 192

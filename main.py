@@ -6,6 +6,7 @@ from scipy import interpolate
 import sys
 import yaml
 import os
+from scalene import scalene_profiler
 #mpl.use("Agg")
 
 
@@ -216,5 +217,8 @@ if __name__ == "__main__":
         check_interpo(num_components, list_components_class_interpolated, list_components_interpolated)
 
     from brute_force import new_brute_force
+    #scalene_profiler.start()
     optimal_result = new_brute_force(num_components, list_components_class_interpolated, max_nproc, show_plots)
-    print_result(num_components, list_components_class_interpolated, optimal_result)
+    #print_result(num_components, list_components_class_interpolated, optimal_result)
+
+    #scalene_profiler.stop()

@@ -266,7 +266,6 @@ def new_brute_force(num_components, list_components_class_interpolated, max_npro
         perf_eff_metric = get_performance_efficiency_metric(df_TTS)
         mask_better_basecase = perf_eff_metric >= 1
         # Maks to match the max_nproc restriction
-        df_nproc = df_nproc_tmp.apply(lambda col: col.name + col.index)
         mask_max_nproc = df_nproc <= max_nproc
         # Compute the fitness
         df_TTS = df_TTS[mask_better_basecase & mask_max_nproc]
@@ -291,5 +290,60 @@ def new_brute_force(num_components, list_components_class_interpolated, max_npro
             "speed_ratio": c1_n.get_sypd(nproc_c1)/c2_n.get_sypd(nproc_c2),
             "top_configurations": top_configurations
         }
+
+    # n-component case
+    else:
+        dim_list = []
+        nproc_list = []
+        sypd_list = []
+        chsy_list = []
+
+        for component in list_components_class_interpolated:
+            dim_list.append(component.nproc.shape[0])
+            nproc_list.append(component.nproc.values)
+            sypd_list.append(component.sypd.SYPD)
+            chsy_list.append(component.chsy.CHSY)
+
+        # Get nproc combinations and total
+        comb_nproc = np.array(np.meshgrid(*nproc_list)).T.reshape(-1, num_components)
+        cpl_nproc = comb_nproc.sum(axis=1)
+
+        # Get SYPD combinations and minimum
+        comb_sypd = np.array(np.meshgrid(*sypd_list)).T.reshape(-1, num_components)
+        cpl_sypd = comb_sypd.min(axis=1)
+
+        # Get the CHSY if components were executed in standalone
+        comb_chsy = np.array(np.meshgrid(*chsy_list)).T.reshape(-1, num_components)
+        components_chsy = comb_chsy.sum(axis=1)
+
+        # Get CHSY expected.  Use equation CHSY = 24*NP/SYPD
+        cpl_chsy = 24 * cpl_nproc / cpl_sypd
+
+        # Get the Coupling cost dividing the component's standalone CHSY by the expected coupling CHSY
+        cpl_cost = 1 - components_chsy / cpl_chsy
+        cpl_cost_chsy = cpl_cost * cpl_chsy
+
+        # Filter using EDP > basecase & max_nproc
+        #perf_eff_metric = get_performance_efficiency_metric(df_TTS)
+        base_case_sypd = cpl_sypd[0]
+        base_case_nproc = cpl_nproc[0]
+        cpl_speedup = cpl_sypd / base_case_sypd
+        cpl_efficiency = cpl_speedup / (cpl_nproc / base_case_nproc)
+        perf_eff_metric = cpl_speedup * cpl_efficiency
+        mask_better_basecase = perf_eff_metric >= 1
+        # Maks to match the max_nproc restriction
+        mask_max_nproc = cpl_nproc <= max_nproc
+        # Compute the fitness
+        cpl_sypd = cpl_sypd[mask_better_basecase & mask_max_nproc]
+        cpl_chsy = cpl_chsy[mask_better_basecase & mask_max_nproc]
+        cpl_nproc = cpl_nproc[mask_better_basecase & mask_max_nproc]
+        f_TTS = minmax_df_normalization(cpl_sypd)
+        f_ETS = 1 - minmax_df_normalization(cpl_chsy)
+        final_fitness = component.TTS_r * f_TTS + component.ETS_r * f_ETS
+
+        # Pick up the best resource configuration and the top5
+        nproc_c1, nproc_c2 = final_fitness.stack().idxmax()
+        top_configurations = final_fitness.stack().nlargest(5).index
+        a = 0
 
     return optimal_result

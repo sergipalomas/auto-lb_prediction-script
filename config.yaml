@@ -3,7 +3,8 @@ Components:
 - name: ATMIFS # TODO: This should be parsed from input files¿?
   file: data/ATMIFS_scalability_CMIP6.csv
   #ATMIFS_scalability_CMIP6.csv
-  nproc_restriction: #[48,96,144,192,240,288,336,384,432,480,528,576,624,672,720,768,816,864,912,960,1008]
+  nproc_restriction: [288,480,576]
+    #[48,96,144,192,240,288,336,384,432,480,528,576,624,672,720,768,816,864,912,960,1008]
     #[48, 96, 144, 192, 240, 288, 336, 384, 432, 480, 528, 576, 624,672, 720, 768, 816, 864, 912, 960, 1008 ]
   timestep_info: #data/ts_data/ATMIFS_ts_CMIP6_384.csv
   timestep_nproc: 384
@@ -27,8 +28,8 @@ Components:
   timestep_nproc:
 
 General:
-  max_nproc: 1600
+  max_nproc: 2000
   TTS_ratio: .5
   interpo_method: quadratic
   show_plots: False
-  nproc_step: 192
+  nproc_step: 24

@@ -205,7 +205,7 @@ def new_brute_force(num_components, list_components_class_interpolated, max_npro
             "SYPD": c1_n.get_sypd(opt_nproc),
         }
 
-    elif num_components == 2:
+    elif num_components == -2:
 
         c1_n = list_components_class_interpolated[0]
         c2_n = list_components_class_interpolated[1]
@@ -278,7 +278,7 @@ def new_brute_force(num_components, list_components_class_interpolated, max_npro
         nproc_c1, nproc_c2 = final_fitness.stack().idxmax()
         top_configurations = final_fitness.stack().nlargest(5).index
 
-        optimal_result = {
+        coupled_optimal_result = {
             "nproc_" + c1_n.name: nproc_c1,
             "nproc_" + c2_n.name: nproc_c2,
             "fitness_" + c1_n.name: c1_n.get_fitness([nproc_c1]),
@@ -293,13 +293,11 @@ def new_brute_force(num_components, list_components_class_interpolated, max_npro
 
     # n-component case
     else:
-        dim_list = []
         nproc_list = []
         sypd_list = []
         chsy_list = []
 
         for component in list_components_class_interpolated:
-            dim_list.append(component.nproc.shape[0])
             nproc_list.append(component.nproc.values)
             sypd_list.append(component.sypd.SYPD)
             chsy_list.append(component.chsy.CHSY)
@@ -334,16 +332,43 @@ def new_brute_force(num_components, list_components_class_interpolated, max_npro
         # Maks to match the max_nproc restriction
         mask_max_nproc = cpl_nproc <= max_nproc
         # Compute the fitness
-        cpl_sypd = cpl_sypd[mask_better_basecase & mask_max_nproc]
-        cpl_chsy = cpl_chsy[mask_better_basecase & mask_max_nproc]
-        cpl_nproc = cpl_nproc[mask_better_basecase & mask_max_nproc]
-        f_TTS = minmax_df_normalization(cpl_sypd)
-        f_ETS = 1 - minmax_df_normalization(cpl_chsy)
+        mask = mask_max_nproc & mask_better_basecase
+        cpl_sypd_mk = cpl_sypd[mask]
+        cpl_chsy_mk = cpl_chsy[mask]
+        cpl_nproc_mk = cpl_nproc[mask]
+        comb_nproc_mk = comb_nproc[mask]
+        cpl_cost_mk = cpl_cost[mask]
+        cpl_cost_chsy_mk = cpl_cost_chsy[mask]
+
+
+        f_TTS = minmax_df_normalization(cpl_sypd_mk)
+        f_ETS = 1 - minmax_df_normalization(cpl_chsy_mk)
         final_fitness = component.TTS_r * f_TTS + component.ETS_r * f_ETS
 
         # Pick up the best resource configuration and the top5
-        nproc_c1, nproc_c2 = final_fitness.stack().idxmax()
-        top_configurations = final_fitness.stack().nlargest(5).index
-        a = 0
+        top_idx = final_fitness.argmax()
+        top5_idx = np.argpartition(final_fitness, -5)[-5:]
 
-    return optimal_result
+        # Build the top solution
+        top_cpl_fitness = final_fitness[top_idx]
+        top_cpl_nproc = comb_nproc_mk[top_idx]
+        top_cpl_sypd = cpl_sypd_mk[top_idx]
+        top_cpl_cplc = cpl_cost_mk[top_idx]
+        top_cpl_chsy = cpl_cost_chsy_mk[top_idx]
+
+        # Build the top5 solution
+        top5_cpl_fitness = final_fitness[top5_idx]
+        top5_cpl_nproc = comb_nproc_mk[top5_idx]
+
+        for i, component in enumerate(list_components_class_interpolated):
+            component.top_nproc = top_cpl_nproc[i]
+            component.top5_nproc = top5_cpl_nproc[:, i]
+
+        coupled_optimal_result = {
+            "objective_f": final_fitness[top_idx],
+            "SYPD": top_cpl_sypd,
+            "cpl_cost": top_cpl_cplc,
+            "cpl_chsy": top_cpl_chsy,
+        }
+
+    return coupled_optimal_result

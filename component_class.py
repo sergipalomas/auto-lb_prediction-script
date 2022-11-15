@@ -32,6 +32,8 @@ class Component:
         self.nproc_restriction = pd.Series(nproc_restriction)
         self.ts_info = ts_info
         self.ts_nproc = ts_nproc
+        self.top_nproc = None
+        self.top5_nproc = []
 
 
     def get_nproc_from_sypd(self, sypd):

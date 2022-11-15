@@ -6,8 +6,8 @@ from scipy import interpolate
 import sys
 import yaml
 import os
-from scalene import scalene_profiler
-#mpl.use("Agg")
+#from scalene import scalene_profiler
+mpl.use("Agg")
 
 
 def check_interpo(num_components, list_components_class, list_components_scalability_df):
@@ -146,6 +146,82 @@ def print_result(num_components, list_components_class_interpolated, optimal_res
         f.write(list_components_class_interpolated[1].name + '_nprocs_0=( ' + ''.join('%s ' % x[1] for x in optimal_result['top_configurations']) + ')\n')
 
 
+def print_result2(num_components, list_components_class_interpolated, optimal_result):
+
+    print("Optimal for TTS=%.1f, ETS=%.1f:" % (TTS_r, ETS_r))
+    nproc_acc = 0
+    chsy_acc = 0
+    for component in list_components_class_interpolated:
+        print("\n -------------------------------\n")
+        print("Results for component %s:" % component.name)
+        print("Number of processes: %i" % component.top_nproc)
+        print("Fitness: %.2f" % component.get_fitness([component.top_nproc]).fitness)
+        print("CHSY: %i" % (component.get_chsy(component.top_nproc)))
+        print("SYPD: %.2f" % component.get_sypd(component.top_nproc))
+        component.plot_scalability(component.top_nproc)
+        component.plot_scalability_n(component.top_nproc)
+        nproc_acc += component.top_nproc
+        chsy_acc += component.get_chsy(component.top_nproc)
+
+    if num_components > 1:
+        # We have to add the cpl_cost to the CHSY
+        chsy_acc += optimal_result['cpl_chsy']
+        print("\n -------------------------------\n")
+        print("Total number of processes: %i" % nproc_acc)
+        print("Expected coupled CHSY: %i" % chsy_acc)
+        print("Expected coupled SYPD: %.2f" % optimal_result['SYPD'])
+        print("Expected coupling cost: %.2f %%, (%.2f CHSY)" % (optimal_result['cpl_cost']*100, optimal_result['cpl_chsy']))
+        print("Coupled Objective Function: %.3f" % optimal_result['objective_f'])
+
+    # Plot all fitness values with the optimal values obtained in the same plot
+    fig, ax1 = plt.subplots()
+    legend = list()
+    for component in list_components_class_interpolated:
+        component.fitness.plot(x='nproc', y='fitness', label=component.name, ax=ax1)
+        # Get currrent color
+        color = plt.gca().lines[-1].get_color()
+        ax1.plot(component.top_nproc, component.get_fitness([component.top_nproc]).fitness, 'o',
+                 label='Opt. %s: %i proc' % (component.name, component.top_nproc), c=color)
+        # Text to be shown
+        text = ' %.2f' % component.get_fitness([component.top_nproc]).fitness
+        ax1.text(component.top_nproc, component.get_fitness([component.top_nproc]).fitness, text)
+    plt.title("Fitness and optimal values")
+    plt.legend()
+    plt.ylabel("Fitness")
+    fig_name = "Fitness_values.png"
+    plt.savefig("./img/" + fig_name)
+    plt.show()
+
+    # Plot all scalability curves with the optimal values obtained in the same plot
+    fig, ax1 = plt.subplots()
+    first = True
+    for component in list_components_class_interpolated:
+        component.sypd.plot(x="nproc", y="SYPD", label=component.name, ax=ax1)
+        # Get currrent color
+        color = plt.gca().lines[-1].get_color()
+        # Draw vertical line
+        ax1.axvline(x=component.top_nproc, ls='-.', c='k',  alpha=1.)
+        # Draw optimal point (dot)
+        ax1.plot(component.top_nproc, component.get_sypd(component.top_nproc), 'ko', markersize=5, c=color,
+                 label='Opt. %s: %i proc' % (component.name, component.top_nproc))
+        # Text to be shown
+        text = ' %.2f' % component.get_sypd(component.top_nproc)
+        ax1.text(component.top_nproc, component.get_sypd(component.top_nproc), text)
+    plt.title("Scalability and optimal values")
+    plt.legend()
+    plt.ylabel("SYPD")
+    fig_name = "Scalability_results.png"
+    plt.savefig("./img/" + fig_name)
+    plt.show()
+
+    # Save top configurations as txt file
+    if num_components > 1:
+        out_file = "nproc_config_0"
+        f = open(out_file, "w")
+        for component in list_components_class_interpolated:
+            #f.write(component.name + '_nprocs_0=( ' + ''.join('%s ' % x[0] for x in optimal_result['top_configurations']) + ')\n')
+            f.write(component.name + '_nprocs_0=( ' + ''.join('%s ' % x for x in component.top5_nproc) + ')\n')
+
 if __name__ == "__main__":
 
     if len(sys.argv) != 2:
@@ -219,6 +295,7 @@ if __name__ == "__main__":
     from brute_force import new_brute_force
     #scalene_profiler.start()
     optimal_result = new_brute_force(num_components, list_components_class_interpolated, max_nproc, show_plots)
+    print_result2(num_components, list_components_class_interpolated, optimal_result)
     #print_result(num_components, list_components_class_interpolated, optimal_result)
 
     #scalene_profiler.stop()

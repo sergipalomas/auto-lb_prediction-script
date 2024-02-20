@@ -205,7 +205,7 @@ def new_brute_force(num_components, list_components_class_interpolated, max_npro
             "SYPD": c1_n.get_sypd(opt_nproc),
         }
 
-    elif num_components == -2:
+    elif num_components == 2:
 
         c1_n = list_components_class_interpolated[0]
         c2_n = list_components_class_interpolated[1]
@@ -258,7 +258,6 @@ def new_brute_force(num_components, list_components_class_interpolated, max_npro
             cpl_cost = 1 - sum_chsy_components / df_ETS
             df_cpl_cost_chsy = cpl_cost * df_ETS
 
-
         if show_plots:
             plot3d_cpl_cost(c1_n, c2_n, df_cpl_cost_chsy)
 
@@ -290,6 +289,10 @@ def new_brute_force(num_components, list_components_class_interpolated, max_npro
             "speed_ratio": c1_n.get_sypd(nproc_c1)/c2_n.get_sypd(nproc_c2),
             "top_configurations": top_configurations
         }
+
+    for i, component in enumerate(list_components_class_interpolated):
+        component.top_nproc = coupled_optimal_result["nproc_" + component.name]
+        component.top5_nproc = [index[i] for index in top_configurations]
 
     # n-component case
     else:

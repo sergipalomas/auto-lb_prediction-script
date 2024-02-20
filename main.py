@@ -202,7 +202,7 @@ def print_result2(num_components, list_components_class_interpolated, optimal_re
         # Draw vertical line
         ax1.axvline(x=component.top_nproc, ls='-.', c='k',  alpha=1.)
         # Draw optimal point (dot)
-        ax1.plot(component.top_nproc, component.get_sypd(component.top_nproc), 'ko', markersize=5, c=color,
+        ax1.plot(component.top_nproc, component.get_sypd(component.top_nproc), 'o', markersize=5, c=color,
                  label='Opt. %s: %i proc' % (component.name, component.top_nproc))
         # Text to be shown
         text = ' %.2f' % component.get_sypd(component.top_nproc)
@@ -221,6 +221,7 @@ def print_result2(num_components, list_components_class_interpolated, optimal_re
         for component in list_components_class_interpolated:
             #f.write(component.name + '_nprocs_0=( ' + ''.join('%s ' % x[0] for x in optimal_result['top_configurations']) + ')\n')
             f.write(component.name + '_nprocs_0=( ' + ''.join('%s ' % x for x in component.top5_nproc) + ')\n')
+            print("Top 5 configurations for %s: %s" % (component.name, component.top5_nproc))
 
 if __name__ == "__main__":
 

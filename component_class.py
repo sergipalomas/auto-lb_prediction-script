@@ -35,7 +35,6 @@ class Component:
         self.top_nproc = None
         self.top5_nproc = []
 
-
     def get_nproc_from_sypd(self, sypd):
         return self.nproc[self.sypd.SYPD == round(sypd)].iloc[0]
 
@@ -43,10 +42,10 @@ class Component:
         return self.sypd[self.nproc == nproc].SYPD.iloc[0]
 
     def get_sypd_v(self, nproc):
-        return self.sypd[self.nproc.isin(nproc)].SYPD
+        return self.sypd[self.nproc.isin(nproc)].SYPD.iloc[0]
 
     def get_sypd_n(self, nproc):
-        return self.sypd_n[self.sypd_n.nproc == nproc].SYPD
+        return self.sypd_n[self.sypd_n.nproc == nproc].SYPD.iloc[0]
 
     def get_speedup(self, nproc):
         return self.get_sypd_v(nproc) / self.get_sypd(self.min_nproc)
@@ -58,13 +57,13 @@ class Component:
         return self.chsy[self.nproc == nproc].CHSY.iloc[0]
 
     def get_chsy2(self, nproc):
-        return self.chsy[self.nproc.isin(nproc)].CHSY
+        return self.chsy[self.nproc.isin(nproc)].CHSY.iloc[0]
 
     def get_chsy_n(self, nproc):
-        return self.chsy_n[self.chsy_n.nproc == nproc].CHSY
+        return self.chsy_n[self.chsy_n.nproc == nproc].CHSY.iloc[0]
 
     def get_fitness(self, nproc):
-        return self.fitness[self.nproc.isin(nproc)]
+        return self.fitness[self.nproc.isin(nproc)].iloc[0]
 
     def compute_fitness(self):
         return self.TTS_r * self.sypd_n.SYPD + self.ETS_r * self.chsy_n.CHSY

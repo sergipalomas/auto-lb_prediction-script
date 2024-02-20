@@ -1,17 +1,17 @@
 import pandas as pd
-import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy import interpolate
 import sys
 import yaml
 import os
-#from scalene import scalene_profiler
-mpl.use("Agg")
+
+
+# from scalene import scalene_profiler
+# mpl.use("Agg")
 
 
 def check_interpo(num_components, list_components_class, list_components_scalability_df):
-
     for i in range(num_components):
 
         c1 = list_components_class[i]
@@ -24,14 +24,15 @@ def check_interpo(num_components, list_components_class, list_components_scalabi
         fig2, ax2 = plt.subplots()
         c1.fitness.plot(x='nproc', y='fitness', ax=ax2)
 
-        methods = ['linear', 'slinear', 'quadratic'] #, 'cubic']
+        methods = ['linear', 'slinear', 'quadratic']  # , 'cubic']
         legend = methods.copy()
         legend.insert(0, 'Real')
         df1 = list_components_scalability_df[i]
         for m in methods:
             ### Start using interpolated data
             comp1_new = pd.concat({'nproc': df1.nproc, 'SYPD': df1[m]})
-            t1 = Component('IFS_n', comp1_new.nproc, comp1_new.SYPD, c1.nproc_restriction, c1.ts_info, c1.ts_nproc, TTS_r, ETS_r)
+            t1 = Component('IFS_n', comp1_new.nproc, comp1_new.SYPD, c1.nproc_restriction, c1.ts_info, c1.ts_nproc,
+                           TTS_r, ETS_r)
 
             t1.sypd.plot(x='nproc', y='SYPD', ax=ax1)
             t1.fitness.plot(x='nproc', y='fitness', ax=ax2)
@@ -50,12 +51,11 @@ def check_interpo(num_components, list_components_class, list_components_scalabi
         plt.show()
 
 
-
 def interpolate_data(component, nproc_step):
     nproc_start = component.nproc.min()
     nproc_end = component.nproc.max() + 1
     ## Interpolation
-    methods = ['linear', 'slinear', 'quadratic']#, 'cubic']
+    methods = ['linear', 'slinear', 'quadratic']  # , 'cubic']
     legend = methods.copy()
     legend.insert(0, 'real')
 
@@ -96,58 +96,6 @@ def interpolate_data(component, nproc_step):
 
 
 def print_result(num_components, list_components_class_interpolated, optimal_result):
-
-    print("Optimal for TTS=%.1f, ETS=%.1f:" % (TTS_r, ETS_r))
-    nproc_acc = 0
-    chsy_acc = 0
-    for component in list_components_class_interpolated:
-        opt_nproc = optimal_result['nproc_' + component.name]
-        print("\n -------------------------------\n")
-        print("Results for component %s:" % component.name)
-        print("Number of processes: %i" % opt_nproc)
-        print("Fitness: %.2f" % component.get_fitness([opt_nproc]).fitness)
-        print("CHSY: %i" % (component.get_chsy(opt_nproc)))
-        print("SYPD: %.2f" % component.get_sypd(opt_nproc))
-        component.plot_scalability(opt_nproc)
-        component.plot_scalability_n(opt_nproc)
-        nproc_acc += opt_nproc
-        chsy_acc += component.get_chsy(opt_nproc)
-
-    if num_components > 1:
-        # We have to add the cpl_cost to the CHSY
-        chsy_acc += optimal_result['cpl_chsy']
-        print("\n -------------------------------\n")
-        print("Total number of processes: %i" % nproc_acc)
-        print("Expected coupled CHSY: %i" % chsy_acc)
-        print("Expected coupled SYPD: %.2f" % optimal_result['SYPD'])
-        print("Expected coupling cost: %.2f %%, (%.2f CHSY)" % (optimal_result['cpl_cost']*100, optimal_result['cpl_chsy']))
-        print("%s/%s speed ratio: %.2f" % (list_components_class_interpolated[0].name, list_components_class_interpolated[1].name, optimal_result['speed_ratio']))
-        print("Coupled Objective Function: %.3f" % optimal_result['objective_f'])
-
-    fig, ax1 = plt.subplots()
-    legend = list()
-    for i in range(num_components):
-        c = list_components_class_interpolated[i]
-        c.fitness.plot(x='nproc', y='fitness', legend=True, ax=ax1)
-        ax1.plot(optimal_result['nproc_' + c.name], c.get_fitness([optimal_result['nproc_' + c.name]]).fitness, 'o')
-        legend.append(c.name)
-        legend.append("optimal " + c.name)
-    plt.title("Fitness values")
-    plt.legend(legend)
-    fig_name = "Fitness_values.png"
-    plt.savefig("./img/" + fig_name)
-    #plt.show()
-
-    # Save top configurations as txt file
-    if num_components > 1:
-        out_file = "nproc_config_0"
-        f = open(out_file, "w")
-        f.write(list_components_class_interpolated[0].name + '_nprocs_0=( ' + ''.join('%s ' % x[0] for x in optimal_result['top_configurations']) + ')\n')
-        f.write(list_components_class_interpolated[1].name + '_nprocs_0=( ' + ''.join('%s ' % x[1] for x in optimal_result['top_configurations']) + ')\n')
-
-
-def print_result2(num_components, list_components_class_interpolated, optimal_result):
-
     print("Optimal for TTS=%.1f, ETS=%.1f:" % (TTS_r, ETS_r))
     nproc_acc = 0
     chsy_acc = 0
@@ -170,7 +118,8 @@ def print_result2(num_components, list_components_class_interpolated, optimal_re
         print("Total number of processes: %i" % nproc_acc)
         print("Expected coupled CHSY: %i" % chsy_acc)
         print("Expected coupled SYPD: %.2f" % optimal_result['SYPD'])
-        print("Expected coupling cost: %.2f %%, (%.2f CHSY)" % (optimal_result['cpl_cost']*100, optimal_result['cpl_chsy']))
+        print("Expected coupling cost: %.2f %%, (%.2f CHSY)" % (
+        optimal_result['cpl_cost'] * 100, optimal_result['cpl_chsy']))
         print("Coupled Objective Function: %.3f" % optimal_result['objective_f'])
 
     # Plot all fitness values with the optimal values obtained in the same plot
@@ -200,7 +149,7 @@ def print_result2(num_components, list_components_class_interpolated, optimal_re
         # Get currrent color
         color = plt.gca().lines[-1].get_color()
         # Draw vertical line
-        ax1.axvline(x=component.top_nproc, ls='-.', c='k',  alpha=1.)
+        ax1.axvline(x=component.top_nproc, ls='-.', c='k', alpha=1.)
         # Draw optimal point (dot)
         ax1.plot(component.top_nproc, component.get_sypd(component.top_nproc), 'o', markersize=5, c=color,
                  label='Opt. %s: %i proc' % (component.name, component.top_nproc))
@@ -219,9 +168,10 @@ def print_result2(num_components, list_components_class_interpolated, optimal_re
         out_file = "nproc_config_0"
         f = open(out_file, "w")
         for component in list_components_class_interpolated:
-            #f.write(component.name + '_nprocs_0=( ' + ''.join('%s ' % x[0] for x in optimal_result['top_configurations']) + ')\n')
+            # f.write(component.name + '_nprocs_0=( ' + ''.join('%s ' % x[0] for x in optimal_result['top_configurations']) + ')\n')
             f.write(component.name + '_nprocs_0=( ' + ''.join('%s ' % x for x in component.top5_nproc) + ')\n')
             print("Top 5 configurations for %s: %s" % (component.name, component.top5_nproc))
+
 
 if __name__ == "__main__":
 
@@ -245,6 +195,7 @@ if __name__ == "__main__":
     show_plots = config['General']['show_plots']
 
     from component_class import Component
+
     list_components_scalability_df = list()
     list_components_class = list()
     list_components_interpolated = list()
@@ -275,7 +226,7 @@ if __name__ == "__main__":
             print(component['nproc_restriction'])
 
         c = Component(component['name'], component_df.nproc, component_df.SYPD,
-                                    component['nproc_restriction'], ts_info_df, component['timestep_nproc'], TTS_r, ETS_r)
+                      component['nproc_restriction'], ts_info_df, component['timestep_nproc'], TTS_r, ETS_r)
         # Interpolate the data
         component_class, df_component_interpolated = interpolate_data(c, nproc_step)
         list_components_class.append(component_class)
@@ -283,7 +234,7 @@ if __name__ == "__main__":
 
         # TODO: Select one of the methods
         comp_interpolated = pd.DataFrame({'nproc': df_component_interpolated.nproc,
-                                           'SYPD': df_component_interpolated[method]})
+                                          'SYPD': df_component_interpolated[method]})
 
         c1_n = Component(c.name, comp_interpolated.nproc, comp_interpolated.SYPD,
                          c.nproc_restriction, ts_info_df, ts_info_nproc, TTS_r, ETS_r)
@@ -293,10 +244,9 @@ if __name__ == "__main__":
     if show_plots:
         check_interpo(num_components, list_components_class_interpolated, list_components_interpolated)
 
-    from brute_force import new_brute_force
-    #scalene_profiler.start()
-    optimal_result = new_brute_force(num_components, list_components_class_interpolated, max_nproc, show_plots)
-    print_result2(num_components, list_components_class_interpolated, optimal_result)
-    #print_result(num_components, list_components_class_interpolated, optimal_result)
+    from brute_force import brute_force
 
-    #scalene_profiler.stop()
+    # scalene_profiler.start()
+    optimal_result = brute_force(num_components, list_components_class_interpolated, max_nproc, show_plots)
+    print_result(num_components, list_components_class_interpolated, optimal_result)
+    # scalene_profiler.stop()

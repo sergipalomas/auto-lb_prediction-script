@@ -39,7 +39,7 @@ Components:
 - name: comp1
   file: data/comp1.csv
   nproc_restriction: # e.g. [ 48, 96, 144, 192, 240 ]
-  timestep_info: # e.g. ts_data/comp1_ts.csv
+  timestep_info: # e.g. data/comp1_ts_240.csv
   timestep_nproc: # e.g. 240
 
 - name: comp2
@@ -59,7 +59,7 @@ General:
 Components: List of components with their corresponding configurations
 - `file`: Path to the CSV file containing the scalability curve.
 - `nproc_restriction`: _(optional)_ Array specifying the allowed number of processes for the component. Example: `[48, 96, 144, 192, 240]`.
-- `timestep_info`:  _(Optional)_ Path to the CSV file that contains timestep-specific information. Example: `ts_data/comp1_ts.csv`.
+- `timestep_info`:  _(Optional)_ Path to the CSV file that contains timestep-specific information. Example: `ts_data/comp1_ts.csv`. This can help the script to get more reliable results.
 - `timestep_nproc`: _(Mandatory if timestep_info is used)_ Integer indicating the number of processors used in the CSV provided in `timestep_info`. Example: `240`.
 
 General settings including maximum processors, TTS ratio, interpolation method, and other configurations. All arguments are mandatory:

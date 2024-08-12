@@ -38,22 +38,15 @@ The config.yaml file is used to set up the component-specific and general config
 Components:
 - name: comp1
   file: data/comp1.csv
-  nproc_restriction:
-  # [48, 96, 144, 192, 240, 288, 336, 384, 432, 480, 528, 576, 624,672, 720, 768, 816, 864, 912, 960, 1008 ]
-  timestep_info:
-  timestep_nproc:
+  nproc_restriction: # e.g. [ 48, 96, 144, 192, 240 ]
+  timestep_info: # e.g. ts_data/comp1_ts.csv
+  timestep_nproc: # e.g. 240
 
 - name: comp2
   file: data/comp2.csv
   nproc_restriction:
   timestep_info: 
   timestep_nproc:
-
-#- name: comp3
-#  file: data/comp3.csv
-#  nproc_restriction:
-#  timestep_info:
-#  timestep_nproc:
 
 General:
   max_nproc: 2000
@@ -63,9 +56,20 @@ General:
   nproc_step: 24
 ```
 
-- Components: List of components with their corresponding configurations.
-- General: General settings including maximum processors, TTS ratio, interpolation method, etc.
+Components: List of components with their corresponding configurations
+- `file`: Path to the CSV file containing the scalability curve.
+- `nproc_restriction`: _(optional)_ Array specifying the allowed number of processes for the component. Example: `[48, 96, 144, 192, 240]`.
+- `timestep_info`:  _(Optional)_ Path to the CSV file that contains timestep-specific information. Example: `ts_data/comp1_ts.csv`.
+- `timestep_nproc`: _(Mandatory if timestep_info is used)_ Integer indicating the number of processors used in the CSV provided in `timestep_info`. Example: `240`.
+
+General settings including maximum processors, TTS ratio, interpolation method, and other configurations. All arguments are mandatory:
+
+- `max_nproc`: Maximum number of processors available for the simulation.
+- `TTS_ratio`: A ratio between 0 and 1 that determines the weight given to Time-to-Solution (TTS). A value of `1` prioritizes speed, minimizing TTS regardless of the execution cost. The recommended value is 0.5. Note that `ETS_ratio = 1 - TTS_ratio` represents the weight for Energy-to-Solution (ETS).
+- `interpo_method`: Method for interpolating scalability data. Options include `linear`, `slinear`, and `quadratic`. The recommended method is `quadratic`, but it can be adjusted if the default interpolation does not accurately reflect the component's scalability.
+- `show_plots`: Boolean flag that, when set to `True`, enables the generation of debug plots. Set to `False` to disable additional plots.
+- `nproc_step`: Step size for evaluating different processor configurations. A smaller step size (e.g., `1`) results in a more granular search for solutions. The step size should be chosen based on the variability and performance characteristics of the model and machine. Here, for instance, I used half of the node size of the machine (`24`).
 
 # License
-This project is licensed under the MIT License. See the LICENSE file for details.
+This project is licensed under the GNU General Public License v3.0. See the LICENSE file for details.
 

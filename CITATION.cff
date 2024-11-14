@@ -3,7 +3,7 @@ message: "If you use this software, please cite it as below."
 authors:
 - family-names: Palomas
   given-names: Sergi
-[![DOI](https://zenodo.org/badge/888500963.svg)](https://doi.org/10.5281/zenodo.14163511)
+orcid: https://orcid.org/10.5281/zenodo.14163512
 title: auto-lb_prediction-scirpt
 version: v1.0
 date-released: 2024-11-14

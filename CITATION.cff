@@ -1,0 +1,9 @@
+cff-version: 1.1.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: Sergi
+  given-names: Palomas
+orcid: https://orcid.org/
+title: auto-lb_prediction-scirpt
+version: v1.0
+date-released: 2024-11-14
